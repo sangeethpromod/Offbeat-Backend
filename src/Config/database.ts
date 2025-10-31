@@ -9,8 +9,12 @@ class Database {
   private config: DatabaseConfig;
 
   constructor() {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('MONGODB_URI environment variable is required');
+    }
     this.config = {
-      uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/offbeat_dev',
+      uri,
       options: {
         maxPoolSize: 10, // Maintain up to 10 socket connections
         serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
