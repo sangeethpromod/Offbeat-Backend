@@ -36,6 +36,7 @@ npm start
 - `npm run format:check` - Check if code is formatted correctly
 - `npm run type-check` - Run TypeScript type checking without emitting files
 - `npm run clean` - Clean the dist directory
+- `npm run clean` - Lint
 
 ## TypeScript Configuration
 
