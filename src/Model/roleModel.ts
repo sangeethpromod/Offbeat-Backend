@@ -11,7 +11,7 @@ const RoleSchema: Schema = new Schema(
   {
     roleId: {
       type: String,
-      default: uuidv4,
+      default: () => uuidv4(),
       unique: true,
     },
     roleName: {
