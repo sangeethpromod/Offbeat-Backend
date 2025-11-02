@@ -1,7 +1,8 @@
 {
   "name": "offbeat-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Comprehensive authentication and host onboarding system with multi-step registration, AWS S3 file uploads, and JWT authentication",
+  "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
@@ -12,19 +13,35 @@
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
+    "seed:roles": "ts-node seedRoles.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "typescript",
+    "express",
+    "mongodb",
+    "aws-s3",
+    "jwt",
+    "authentication",
+    "file-upload",
+    "multi-step-registration"
+  ],
+  "author": "Offbeat Team",
   "license": "ISC",
-  "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.922.0",
     "@supabase/supabase-js": "^2.78.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/uuid": "^10.0.0",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.2",
+    "multer": "^2.0.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0"

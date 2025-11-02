@@ -6,6 +6,8 @@ import express from 'express';
 import cors from 'cors';
 import database from './Config/database';
 import roleRoutes from './Routes/roleRoutes';
+import authRoutes from './Routes/authRoute';
+import hostRoutes from './Routes/hostRoutes';
 import { swaggerUi, specs } from './Config/swagger';
 
 const app = express();
@@ -21,6 +23,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/roles', roleRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/host', hostRoutes);
 
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

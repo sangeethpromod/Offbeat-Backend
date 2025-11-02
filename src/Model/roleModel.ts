@@ -22,8 +22,8 @@ const RoleSchema: Schema = new Schema(
     roleStatus: {
       type: String,
       required: true,
-      enum: ['active', 'inactive'],
-      default: 'active',
+      enum: ['ACTIVE', 'INACTIVE'],
+      default: 'ACTIVE',
     },
   },
   {
