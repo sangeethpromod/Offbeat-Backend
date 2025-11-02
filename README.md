@@ -1,188 +1,212 @@
-# Offbeat Backend - Authentication & Host Onboarding System# Offbeat Backend - Comprehensive Documentation
+# Offbeat Backend - Authentication & Host Onboarding System
 
-Welcome to the Offbeat Backend. This system provides a complete authentication and host onboarding solution with multi-step registration, AWS S3 file uploads, and JWT authentication.Welcome to the Offbeat Backend documentation. This system provides a complete authentication and host onboarding solution with multi-step registration, AWS S3 file uploads, and JWT authentication.
+Welcome to the Offbeat Backend documentation. This system provides a comprehensive authentication and host onboarding solution with Firebase Authentication, multi-step registration, AWS S3 file uploads, and JWT authentication.
 
-## 📚 Documentation## 📚 Documentation Structure
+## 📚 Documentation Structure
 
-### 🔗 Quick Links### 🔗 Quick Links
+### 🔗 Quick Links
 
 - **[Swagger/OpenAPI](http://localhost:8080/api-docs)** - Interactive API documentation (when server is running)
-
-- **[Getting Started](#getting-started)** - Quick setup guide- **[API Documentation](./docs/index.html)** - Complete TypeDoc generated API documentation
-
-- **[Architecture Overview](#architecture-overview)** - System design and components- **[Swagger/OpenAPI](http://localhost:8080/api-docs)** - Interactive API documentation (when server is running)
-
 - **[Getting Started](#getting-started)** - Quick setup guide
+- **[Architecture Overview](#architecture-overview)** - System design and components
 
-## 🚀 Getting Started- **[Architecture Overview](#architecture-overview)** - System design and components
+## 🚀 Getting Started
 
-### Prerequisites## 🚀 Getting Started
-
-- Node.js (v16 or higher)
-
-- MongoDB (local or cloud instance)### Prerequisites
-
-- AWS S3 bucket (for file uploads)
+### Prerequisites
 
 - Node.js (v16 or higher)
-
-### Installation & Setup- MongoDB (local or cloud instance)
-
+- MongoDB (local or cloud instance)
 - AWS S3 bucket (for file uploads)
+- Firebase project with Authentication enabled
+
+### Installation & Setup
 
 1. **Install Dependencies**
 
-   ````bash### Installation & Setup
-
+   ```bash
    npm install
+   ```
 
-   ```1. **Install Dependencies**
+2. **Firebase Configuration**
 
-   ````
+   ```bash
+   # Copy the example service account key
+   cp serviceAccountKey.json.example serviceAccountKey.json
 
-2. **Environment Configuration** ```bash
+   # Edit with your Firebase service account credentials
+   # Download from Firebase Console > Project Settings > Service Accounts
+   ```
 
-   ````bash npm install
+3. **Environment Configuration**
 
-   cp .env.dev.example .env.dev   ```
-
+   ```bash
+   cp .env.dev.example .env.dev
    # Edit .env.dev with your configuration
+   ```
 
-   ```2. **Environment Configuration**
+4. **Seed Database**
 
-   ````
+   ```bash
+   npm run seed:roles
+   ```
 
-3. **Seed Database** ```bash
+5. **Start Development Server**
 
-   ````bash cp .env.dev.example .env.dev
+   ```bash
+   npm run dev
+   ```
 
-   npm run seed:roles   # Edit .env.dev with your configuration
+6. **View API Documentation**
 
-   ```   ```
-
-   ````
-
-4. **Start Development Server**3. **Seed Database**
-
-   ````bash
-
-   npm run dev   ```bash
-
-   ```   npm run seed:roles
-
-   ````
-
-5. **View API Documentation**
-
-   ````bash4. **Start Development Server**
-
+   ```bash
    # Start server and visit: http://localhost:8080/api-docs
-
-   npm run dev   ```bash
-
-   ```   npm run dev
-
-   ````
+   ```
 
 ## 🏗️ Architecture Overview
 
-5. **View Documentation**
+### Core Components
 
-### Core Components ```bash
+#### 🔐 Authentication System
 
-npm run docs:serve # Serves docs at http://localhost:3001
+- **Firebase Authentication**: Primary authentication with Google Sign-In support
+- **Traveller Registration**: Single-step registration with Firebase user creation
+- **Host Onboarding**: Multi-step process with progress tracking
+- **JWT Authentication**: Backup authentication for internal APIs
+- **Role Validation**: ACTIVE role requirement enforcement
+- **Google Sign-In**: Seamless OAuth integration with Firebase
 
-#### 🔐 Authentication System ```
-
-- **Traveller Registration**: Single-step registration with immediate login
-
-- **Host Onboarding**: Multi-step process with progress tracking## 🏗️ Architecture Overview
-
-- **JWT Authentication**: Secure token-based authentication
-
-- **Role Validation**: ACTIVE role requirement enforcement### Core Components
-
-#### 📁 File Management#### 🔐 Authentication System
+#### 📁 File Management
 
 - **AWS S3 Integration**: Direct file uploads with organized folder structure
-
-- **Document Types**: Aadhar cards, PCC certificates, live pictures- **Traveller Registration**: Single-step registration with immediate login
-
-- **File Validation**: Type and size restrictions- **Host Onboarding**: Multi-step process with progress tracking
-
-- **URL Generation**: Public S3 URLs for stored files- **JWT Authentication**: Secure token-based authentication
-
-- **Role Validation**: ACTIVE role requirement enforcement
+- **Document Types**: Aadhar cards, PCC certificates, live pictures
+- **File Validation**: Type and size restrictions
+- **URL Generation**: Public S3 URLs for stored files
 
 #### 🗄️ Database Design
 
-- **AuthUser**: Common authentication data for all users#### 📁 File Management
+### Multi-Step Host Onboarding Flow
 
-- **HostProfile**: Host-specific profile data and onboarding tracking
-
-- **Role**: Role master data with status management- **AWS S3 Integration**: Direct file uploads with organized folder structure
-
-- **Document Types**: Aadhar cards, PCC certificates, live pictures
-
-### Multi-Step Host Onboarding Flow- **File Validation**: Type and size restrictions
-
-- **URL Generation**: Public S3 URLs for stored files
-
-```````mermaid
-
-graph TD#### 🗄️ Database Design
-
+```mermaid
+graph TD
     A[Step 1: Basic Info] --> B[Create AuthUser + HostProfile]
-
-    B --> C[Step 2: Set Password]- **AuthUser**: Common authentication data for all users
-
-    C --> D[Update AuthUser with password]- **HostProfile**: Host-specific profile data and onboarding tracking
-
-    D --> E[Step 3: Upload Documents]- **Role**: Role master data with status management
-
-    E --> F[Upload to S3]
-
-    F --> G[Update HostProfile]### Multi-Step Host Onboarding Flow
-
-    G --> H[Generate JWT Token]
-
-    H --> I[Registration Complete]```mermaid
-
-```graph TD
-
-    A[Step 1: Basic Info] --> B[Create AuthUser + HostProfile]
-
-## 📖 API Documentation    B --> C[Step 2: Set Password]
-
+    B --> C[Step 2: Set Password]
     C --> D[Update AuthUser with password]
-
-### Authentication Endpoints    D --> E[Step 3: Upload Documents]
-
+    D --> E[Step 3: Upload Documents]
     E --> F[Upload to S3]
+    F --> G[Update HostProfile]
+    G --> H[Generate JWT Token]
+    H --> I[Registration Complete]
+```
 
-#### Register Traveller    F --> G[Update HostProfile]
+### Firebase Authentication Flow
 
-```http    G --> H[Generate JWT Token]
+```mermaid
+graph TD
+    A[User Registration] --> B[Create Firebase User]
+    B --> C[Save to Database with Firebase UID]
+    C --> D[Generate Custom Token]
+    D --> E[Return App Token + Firebase Token]
 
-POST /api/auth/register-traveller    H --> I[Registration Complete]
+    F[Google Sign-In] --> G[Verify Firebase ID Token]
+    G --> H[Create/Update User in Database]
+    H --> I[Generate App JWT Token]
+    I --> J[Return User Profile + Tokens]
+```
 
-Content-Type: application/json```
+## 📖 API Documentation
 
+### Authentication Endpoints
 
+#### Register Traveller
+
+```http
+POST /api/auth/register-traveller
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "role": "traveller"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Traveller registered successfully",
+  "data": {
+    "user": {
+      "userId": "uuid",
+      "fullName": "John Doe",
+      "email": "john@example.com",
+      "role": "traveller",
+      "firebaseUid": "firebase-uid"
+    },
+    "token": "jwt-token",
+    "firebaseToken": "firebase-custom-token"
+  }
+}
+```
+
+#### Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+#### Google Login
+
+```http
+POST /api/auth/google-login
+Content-Type: application/json
+
+{
+  "idToken": "firebase-id-token-from-google-signin"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Google login successful",
+  "data": {
+    "user": {
+      "userId": "uuid",
+      "fullName": "John Doe",
+      "email": "john@gmail.com",
+      "role": "traveller",
+      "firebaseUid": "firebase-uid"
+    },
+    "token": "jwt-token",
+    "firebaseToken": "firebase-id-token"
+  }
+}
+```
 
 {## 📖 API Documentation
 
-  "fullName": "John Doe",
+"fullName": "John Doe",
 
-  "email": "john@example.com",### Authentication Endpoints
+"email": "john@example.com",### Authentication Endpoints
 
-  "password": "password123",
+"password": "password123",
 
-  "role": "traveller"#### Register Traveller
+"role": "traveller"#### Register Traveller
 
 }
 
-``````http
+````http
 
 POST /api/auth/register-traveller
 
@@ -204,7 +228,7 @@ Content-Type: application/json  "fullName": "John Doe",
 
 }```
 
-```````
+````
 
 #### Login
 

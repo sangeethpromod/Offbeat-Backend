@@ -40,6 +40,11 @@ const AuthUserSchema: Schema = new Schema(
       type: Boolean,
       default: true,
     },
+    firebaseUid: {
+      type: String,
+      sparse: true, // Allows multiple null values but enforces uniqueness for non-null values
+      unique: true,
+    },
   },
   {
     timestamps: true,

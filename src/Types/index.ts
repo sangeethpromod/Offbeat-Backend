@@ -17,6 +17,7 @@ export interface IAuthUser extends Document {
   password?: string; // Optional since hosts may not have password initially
   role: string;
   isActive: boolean;
+  firebaseUid?: string; // Firebase User ID
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,6 +73,10 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface GoogleLoginRequest {
+  idToken: string;
+}
+
 // Response Types
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -85,8 +90,22 @@ export interface LoginResponse {
     fullName: string;
     email: string;
     role: string;
+    firebaseUid?: string;
   };
   token: string;
+  firebaseToken?: string;
+}
+
+export interface GoogleLoginResponse {
+  user: {
+    userId: string;
+    fullName: string;
+    email: string;
+    role: string;
+    firebaseUid: string;
+  };
+  token: string;
+  firebaseToken: string;
 }
 
 export interface HostStepResponse {
@@ -102,4 +121,22 @@ export interface HostStepResponse {
     email: string;
     role: string;
   };
+}
+
+// Firebase Types
+export interface FirebaseUser {
+  uid: string;
+  email?: string | undefined;
+  name?: string | undefined;
+  picture?: string | undefined;
+  email_verified?: boolean | undefined;
+}
+
+// Extend Express Request type to include Firebase user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: FirebaseUser;
+    }
+  }
 }
