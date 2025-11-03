@@ -1,17 +1,17 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import AuthUser from '../Model/authModel';
-import HostProfile from '../Model/hostModel';
-import Role from '../Model/roleModel';
-import s3Service from '../Service/s3Service';
+import AuthUser from '../../Model/authModel';
+import HostProfile from '../../Model/hostModel';
+import Role from '../../Model/roleModel';
+import s3Service from '../../Service/s3Service';
 import {
   RegisterHostStep1Request,
   RegisterHostStep2Request,
   RegisterHostStep3Request,
   ApiResponse,
   HostStepResponse,
-} from '../Types';
+} from '../../Types';
 
 /**
  * Host Registration Step 1: Create AuthUser and HostProfile with basic info

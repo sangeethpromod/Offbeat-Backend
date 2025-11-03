@@ -5,7 +5,7 @@ import {
   registerHostStep2,
   registerHostStep3,
   getHostStatus,
-} from '../Controller/hostController';
+} from '../Controller/Host/hostController';
 
 const router = Router();
 

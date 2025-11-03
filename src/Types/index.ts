@@ -94,6 +94,9 @@ export interface LoginResponse {
   };
   token: string;
   firebaseToken?: string;
+  // New fields for token management
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface GoogleLoginResponse {
@@ -106,6 +109,9 @@ export interface GoogleLoginResponse {
   };
   token: string;
   firebaseToken: string;
+  // New fields for token management
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface HostStepResponse {

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { generateTokens } from '../../Middleware/tokenManagement';
 import { auth } from '../../Config/firebase';
 import AuthUser from '../../Model/authModel';
 import Role from '../../Model/roleModel';
@@ -100,17 +101,12 @@ export const registerTraveller = async (
     // Generate custom Firebase token for immediate login
     const firebaseToken = await auth.createCustomToken(firebaseUser.uid);
 
-    // Generate JWT token for our app
-    const jwtToken = jwt.sign(
-      {
-        userId: savedUser.userId,
-        email: savedUser.email,
-        role: savedUser.role,
-        firebaseUid: firebaseUser.uid,
-      },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
-    );
+    // Generate access/refresh tokens for our app
+    const { accessToken, refreshToken } = await generateTokens({
+      userId: savedUser.userId,
+      email: savedUser.email,
+      role: savedUser.role,
+    });
 
     res.status(201).json({
       success: true,
@@ -123,7 +119,9 @@ export const registerTraveller = async (
           role: savedUser.role,
           firebaseUid: firebaseUser.uid,
         },
-        token: jwtToken,
+        token: accessToken,
+        accessToken,
+        refreshToken,
         firebaseToken,
       },
     });
@@ -235,17 +233,12 @@ export const login = async (
       return;
     }
 
-    // Generate JWT token for our app
-    const jwtToken = jwt.sign(
-      {
-        userId: user.userId,
-        email: user.email,
-        role: user.role,
-        firebaseUid: user.firebaseUid,
-      },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
-    );
+    // Generate access/refresh tokens for our app
+    const { accessToken, refreshToken } = await generateTokens({
+      userId: user.userId,
+      email: user.email,
+      role: user.role,
+    });
 
     res.status(200).json({
       success: true,
@@ -258,7 +251,9 @@ export const login = async (
           role: user.role,
           firebaseUid: user.firebaseUid,
         },
-        token: jwtToken,
+        token: accessToken,
+        accessToken,
+        refreshToken,
         firebaseToken,
       },
     });
