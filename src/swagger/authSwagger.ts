@@ -2,7 +2,7 @@
  * @swagger
  * components:
  *   schemas:
- *     RegisterTravellerRequest:
+ *     RegisterUserRequest:
  *       type: object
  *       required:
  *         - fullName
@@ -23,6 +23,7 @@
  *           example: "password123"
  *         role:
  *           type: string
+ *           enum: [traveller, admin]
  *           example: "traveller"
  *
  *     LoginRequest:
@@ -105,20 +106,20 @@
 
 /**
  * @swagger
- * /api/auth/register-traveller:
+ * /api/auth/register-user:
  *   post:
- *     summary: Register a new traveller
- *     description: Single-step registration for travellers with immediate login capability. Validates that the role exists and is ACTIVE.
+ *     summary: Register a new user
+ *     description: Single-step registration for users with traveller or admin roles. Validates that the role exists and is ACTIVE.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/RegisterTravellerRequest'
+ *             $ref: '#/components/schemas/RegisterUserRequest'
  *     responses:
  *       201:
- *         description: Traveller registered successfully
+ *         description: User registered successfully
  *         content:
  *           application/json:
  *             schema:

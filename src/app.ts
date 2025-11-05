@@ -10,6 +10,8 @@ import authRoutes from './Routes/authRoute';
 import hostRoutes from './Routes/hostRoutes';
 import storyRoutes from './Routes/storyRoutes';
 import feeRoutes from './Routes/feeRoute';
+import legalRoutes from './Routes/legalRoutes';
+import bookingRoutes from './Routes/booking';
 import { swaggerUi, specs } from './Config/swagger';
 
 const app = express();
@@ -29,6 +31,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/host', hostRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/fees', feeRoutes);
+app.use('/api/legal', legalRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Swagger documentation
 app.use(

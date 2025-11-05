@@ -301,3 +301,50 @@
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+
+/**
+ * @swagger
+ * /api/stories/my-stories:
+ *   get:
+ *     summary: Get all stories created by the authenticated user
+ *     description: Retrieves all stories created by the currently authenticated user. The user ID is extracted from the JWT token and compared with the createdBy field in the database.
+ *     tags: [Stories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Stories retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Stories retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     stories:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/StoryResponse'
+ *                     count:
+ *                       type: number
+ *                       example: 3
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */

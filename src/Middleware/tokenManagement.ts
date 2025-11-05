@@ -9,6 +9,7 @@ type JwtPayloadBase = {
   userId: string;
   email: string;
   role: string;
+  fullName: string;
 };
 
 type AccessTokenPayload = JwtPayloadBase & { tokenType: 'access' };
@@ -67,6 +68,7 @@ export async function generateTokens(user: {
   userId: string;
   email: string;
   role: string;
+  fullName: string;
 }) {
   const accessToken = signAccessToken(user);
   const { token: refreshToken } = await signAndStoreRefreshToken(user);
@@ -98,6 +100,7 @@ export function verifyAccessToken(
       userId: decoded.userId,
       email: decoded.email,
       role: decoded.role,
+      fullName: decoded.fullName,
     };
     next();
   } catch (err: any) {
@@ -165,6 +168,7 @@ export async function refreshTokenHandler(req: Request, res: Response) {
       userId: user.userId,
       email: user.email,
       role: user.role,
+      fullName: user.fullName,
     });
     res
       .status(200)

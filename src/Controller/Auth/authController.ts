@@ -6,7 +6,7 @@ import { auth } from '../../Config/firebase';
 import AuthUser from '../../Model/authModel';
 import Role from '../../Model/roleModel';
 import {
-  RegisterTravellerRequest,
+  RegisterUserRequest,
   LoginRequest,
   GoogleLoginRequest,
   ApiResponse,
@@ -15,10 +15,10 @@ import {
 } from '../../Types';
 
 /**
- * Register a new traveller with Firebase Authentication
+ * Register a new user (traveller or admin) with Firebase Authentication
  */
-export const registerTraveller = async (
-  req: Request<{}, ApiResponse, RegisterTravellerRequest>,
+export const registerUser = async (
+  req: Request<{}, ApiResponse, RegisterUserRequest>,
   res: Response<ApiResponse>
 ): Promise<void> => {
   try {
@@ -29,6 +29,15 @@ export const registerTraveller = async (
       res.status(400).json({
         success: false,
         message: 'All fields are required: fullName, email, password, role',
+      });
+      return;
+    }
+
+    // Validate role - only allow 'traveller' or 'admin' (case sensitive)
+    if (role !== 'traveller' && role !== 'admin') {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid role. Role must be either "traveller" or "admin"',
       });
       return;
     }
@@ -106,11 +115,12 @@ export const registerTraveller = async (
       userId: savedUser.userId,
       email: savedUser.email,
       role: savedUser.role,
+      fullName: savedUser.fullName,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Traveller registered successfully',
+      message: `${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully`,
       data: {
         user: {
           userId: savedUser.userId,
@@ -238,6 +248,7 @@ export const login = async (
       userId: user.userId,
       email: user.email,
       role: user.role,
+      fullName: user.fullName,
     });
 
     res.status(200).json({
@@ -329,9 +340,10 @@ export const googleLogin = async (
       }
     } else {
       // User doesn't exist, create new user with default 'traveller' role
+      // NOTE: Firebase-created users are ALWAYS 'traveller' - never 'admin'
       const defaultRole = 'traveller';
 
-      // Check if default role exists
+      // Verify the default role exists and is active
       const roleDoc = await Role.findOne({
         roleName: defaultRole,
         roleStatus: 'ACTIVE',
@@ -348,7 +360,7 @@ export const googleLogin = async (
       user = new AuthUser({
         fullName: name || email.split('@')[0], // Use name or email prefix
         email,
-        role: defaultRole,
+        role: defaultRole, // Always 'traveller' for Firebase users
         firebaseUid: uid,
         // No password needed for Google sign-in users
       });

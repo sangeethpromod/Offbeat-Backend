@@ -3,9 +3,17 @@ import {
   createStory,
   updateStoryPage2,
   updateStoryPage3,
+  updateStoryImages,
+  updateStoryItinerary,
 } from '../Controller/Story/StoryController';
+import { getStoriesByUser } from '../Controller/Story/getStoryController';
+import upload from '../Utils/multerConfig';
+import { verifyAccessToken } from '../Middleware/tokenManagement';
 
 const storyRoutes = Router();
+
+// Apply authentication middleware to all story routes
+storyRoutes.use(verifyAccessToken);
 
 // STEP 1: POST /api/stories
 storyRoutes.post('/create-story', createStory);
@@ -15,5 +23,22 @@ storyRoutes.patch('/create-story/:id/page2', updateStoryPage2);
 
 // STEP 3: PATCH /api/stories/:id/page3
 storyRoutes.patch('/create-story/:id/page3', updateStoryPage3);
+
+// STEP 4: PATCH /api/stories/:id/page4
+storyRoutes.patch(
+  '/create-story/:id/page4',
+  upload.fields([
+    { name: 'bannerImage', maxCount: 1 },
+    { name: 'storyImage', maxCount: 1 },
+    { name: 'otherImages', maxCount: 10 }, // Allow up to 10 other images
+  ]),
+  updateStoryImages
+);
+
+// STEP 5: PATCH /api/stories/:id/itinerary
+storyRoutes.patch('/create-story/:id/page5', updateStoryItinerary);
+
+// GET /api/stories/my-stories - Get all stories created by the authenticated user
+storyRoutes.get('/my-stories', getStoriesByUser);
 
 export default storyRoutes;

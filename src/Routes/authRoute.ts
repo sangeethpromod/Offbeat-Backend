@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  registerTraveller,
+  registerUser,
   login,
   googleLogin,
 } from '../Controller/Auth/authController';
@@ -13,7 +13,7 @@ const router = Router();
 import '../swagger/authSwagger';
 
 // POST /api/auth/register-traveller
-router.post('/register-traveller', registerTraveller);
+router.post('/register-user', registerUser);
 
 // POST /api/auth/login
 router.post('/login', login);

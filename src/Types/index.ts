@@ -42,7 +42,7 @@ export interface IHostProfile extends Document {
 }
 
 // Request Types
-export interface RegisterTravellerRequest {
+export interface RegisterUserRequest {
   fullName: string;
   email: string;
   password: string;

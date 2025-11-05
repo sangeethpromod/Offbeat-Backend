@@ -3,7 +3,11 @@ import Story, {
   IStory,
   LocationType,
   PricingType,
+  StoryImages,
+  ImageData,
+  ItineraryDay,
 } from '../../Model/storyModel';
+import s3Service from '../../Service/s3Service';
 
 // Helpers
 const calculateNoOfDays = (start: Date, end: Date): number => {
@@ -23,6 +27,24 @@ export const createStory = async (
   res: Response
 ): Promise<void> => {
   try {
+    // Extract user information from JWT token
+    // You can now access: userId, email, fullName from the authenticated user
+    const {
+      userId,
+      email: _email,
+      fullName: _fullName,
+      role,
+    } = (req as any).jwtUser;
+
+    // Check if user has Host role
+    if (role !== 'Host') {
+      res.status(403).json({
+        success: false,
+        message: 'Only users with Host role can create stories',
+      });
+      return;
+    }
+
     const {
       storyTitle,
       storyDescription,
@@ -69,7 +91,9 @@ export const createStory = async (
       endDate,
       noOfDays,
       maxTravelersPerDay,
+      currentCapacity: maxTravelersPerDay, // Automatically set currentCapacity to maxTravelersPerDay
       status: 'DRAFT',
+      createdBy: userId, // Added: Set createdBy to the authenticated user's ID
     });
 
     const created = await story.save();
@@ -237,6 +261,202 @@ export const updateStoryPage3 = async (
     });
   } catch (error: any) {
     console.error('Error updating booking page 3:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+// STEP 4: Update story images (PATCH /api/stories/:id/images)
+export const updateStoryImages = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params; // storyId
+
+    // Check if story exists
+    const existingStory = await Story.findOne({ storyId: id });
+    if (!existingStory) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    const storyImages: StoryImages = {};
+
+    // Upload banner image
+    if (files.bannerImage && files.bannerImage.length > 0) {
+      const bannerFile = files.bannerImage[0];
+      if (bannerFile) {
+        const bannerUrl = await s3Service.uploadFile(
+          bannerFile,
+          `stories/${id}/banner`
+        );
+        const bannerKey = bannerUrl.split('/').slice(3).join('/');
+        storyImages.bannerImage = {
+          key: bannerKey,
+          url: bannerUrl,
+        };
+      }
+    }
+
+    // Upload story image
+    if (files.storyImage && files.storyImage.length > 0) {
+      const storyFile = files.storyImage[0];
+      if (storyFile) {
+        const storyUrl = await s3Service.uploadFile(
+          storyFile,
+          `stories/${id}/main`
+        );
+        const storyKey = storyUrl.split('/').slice(3).join('/');
+        storyImages.storyImage = {
+          key: storyKey,
+          url: storyUrl,
+        };
+      }
+    }
+
+    // Upload other images
+    if (files.otherImages && files.otherImages.length > 0) {
+      const otherImages: ImageData[] = [];
+      for (const file of files.otherImages) {
+        if (file) {
+          const otherUrl = await s3Service.uploadFile(
+            file,
+            `stories/${id}/others`
+          );
+          const otherKey = otherUrl.split('/').slice(3).join('/');
+          otherImages.push({
+            key: otherKey,
+            url: otherUrl,
+          });
+        }
+      }
+      storyImages.otherImages = otherImages;
+    }
+
+    // Update the story with the new images
+    const updated = await Story.findOneAndUpdate(
+      { storyId: id },
+      { storyImages },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Story images updated',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story images:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+// STEP 5: Update story itinerary (PATCH /api/stories/:id/itinerary)
+export const updateStoryItinerary = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params; // storyId
+    const { pickUpTime, dropOffTime, itinerary } = req.body as {
+      pickUpTime?: string;
+      dropOffTime?: string;
+      itinerary?: ItineraryDay[];
+    };
+
+    // Check if story exists
+    const existingStory = await Story.findOne({ storyId: id });
+    if (!existingStory) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Prepare update object
+    const updateData: Partial<IStory> = {};
+
+    if (pickUpTime !== undefined) {
+      updateData.pickUpTime = new Date(pickUpTime);
+    }
+
+    if (dropOffTime !== undefined) {
+      updateData.dropOffTime = new Date(dropOffTime);
+    }
+
+    if (itinerary !== undefined) {
+      // Basic validation for itinerary
+      if (!Array.isArray(itinerary)) {
+        res.status(400).json({
+          success: false,
+          message: 'Itinerary must be an array',
+        });
+        return;
+      }
+
+      // Validate each day
+      for (const day of itinerary) {
+        if (typeof day.day !== 'number' || day.day < 1) {
+          res.status(400).json({
+            success: false,
+            message:
+              'Each itinerary day must have a valid day number (minimum 1)',
+          });
+          return;
+        }
+
+        if (!Array.isArray(day.activities)) {
+          res.status(400).json({
+            success: false,
+            message: 'Each day must have an activities array',
+          });
+          return;
+        }
+
+        // Validate activities
+        for (const activity of day.activities) {
+          if (!activity.type || !activity.activityName) {
+            res.status(400).json({
+              success: false,
+              message: 'Each activity must have type and activityName',
+            });
+            return;
+          }
+        }
+      }
+
+      updateData.itinerary = itinerary;
+    }
+
+    // Update the story
+    const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Story itinerary updated',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story itinerary:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',

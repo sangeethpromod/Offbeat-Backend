@@ -9,6 +9,31 @@ export type LocationType =
 
 export type PricingType = 'Per Day' | 'Per Person';
 
+export interface ImageData {
+  key: string;
+  url: string;
+}
+
+export interface Activity {
+  type: string;
+  activityName: string;
+  activityDescription?: string;
+  activityTime?: string;
+  activityDuration?: string;
+  activityLocation?: string;
+}
+
+export interface ItineraryDay {
+  day: number;
+  activities: Activity[];
+}
+
+export interface StoryImages {
+  bannerImage?: ImageData;
+  storyImage?: ImageData;
+  otherImages?: ImageData[];
+}
+
 export interface PriceItem {
   label: string;
   value: number;
@@ -24,8 +49,10 @@ export interface IStory extends Document {
   startDate: Date;
   endDate: Date;
   noOfDays: number;
+  currentCapacity: number;
   maxTravelersPerDay: number;
   status: 'DRAFT' | 'INCOMPLETE' | 'PUBLISHED';
+  createdBy: string; // Added: User ID of the creator
   // Step 2
   locationType?: LocationType;
   pickupLocation?: string;
@@ -41,6 +68,11 @@ export interface IStory extends Document {
   platformFee?: number;
   totalPrice?: number;
   priceBreakdown?: PriceItem[];
+  // Step 4
+  storyImages?: StoryImages;
+  pickUpTime?: Date;
+  dropOffTime?: Date;
+  itinerary?: ItineraryDay[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,6 +81,43 @@ const PriceItemSchema = new Schema<PriceItem>(
   {
     label: { type: String, required: true, trim: true },
     value: { type: Number, required: true, min: 0 },
+  },
+  { _id: false }
+);
+
+const ImageDataSchema = new Schema<ImageData>(
+  {
+    key: { type: String, required: true, trim: true },
+    url: { type: String, required: true, trim: true },
+  },
+  { _id: false }
+);
+
+const ActivitySchema = new Schema<Activity>(
+  {
+    type: { type: String, required: true, trim: true },
+    activityName: { type: String, required: true, trim: true },
+    activityDescription: { type: String, trim: true },
+    activityTime: { type: String, trim: true },
+    activityDuration: { type: String, trim: true },
+    activityLocation: { type: String, trim: true },
+  },
+  { _id: false }
+);
+
+const ItineraryDaySchema = new Schema<ItineraryDay>(
+  {
+    day: { type: Number, required: true, min: 1 },
+    activities: { type: [ActivitySchema], default: [] },
+  },
+  { _id: false }
+);
+
+const StoryImagesSchema = new Schema<StoryImages>(
+  {
+    bannerImage: ImageDataSchema,
+    storyImage: ImageDataSchema,
+    otherImages: [ImageDataSchema],
   },
   { _id: false }
 );
@@ -76,6 +145,7 @@ const StorySchema = new Schema<IStory>(
       default: 'DRAFT',
       required: true,
     },
+    createdBy: { type: String, required: true, trim: true }, // Added: User ID of the creator
     // Step 2
     locationType: {
       type: String,
@@ -94,6 +164,11 @@ const StorySchema = new Schema<IStory>(
     platformFee: { type: Number, default: 50, min: 0 },
     totalPrice: { type: Number, min: 0 },
     priceBreakdown: { type: [PriceItemSchema], default: [] },
+    // Step 4
+    storyImages: StoryImagesSchema,
+    pickUpTime: { type: Date },
+    dropOffTime: { type: Date },
+    itinerary: { type: [ItineraryDaySchema], default: [] },
   },
   { timestamps: true }
 );
