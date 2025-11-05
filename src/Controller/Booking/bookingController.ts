@@ -4,6 +4,12 @@ const expressValidator = require('express-validator');
 const { body, validationResult } = expressValidator;
 import Booking from '../../Model/booking';
 import Story from '../../Model/storyModel';
+import {
+  trackBookingOperation,
+  trackDatabaseOperation,
+  trackError,
+  trackBusinessMetric,
+} from '../../Utils/newrelicInstrumentation';
 
 export interface CreateBookingRequest {
   storyId: string;
@@ -168,15 +174,16 @@ async function checkCapacityForDateRange(
   return { hasCapacity: true, maxCapacity };
 }
 
-/**
- * Create a new booking with capacity validation
- */
 export const createBooking = async (
   req: Request<{}, {}, CreateBookingRequest>,
   res: Response
 ): Promise<void> => {
+  const startTime = Date.now();
+  const userId = (req as any).user?.id;
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    trackBookingOperation('validation_failed', undefined, userId, false);
     res.status(400).json({
       success: false,
       message: 'Validation failed',
@@ -202,11 +209,18 @@ export const createBooking = async (
       const bookingEndDate = new Date(endDate);
 
       // Validate date range against story availability
+      const dateValidationStart = Date.now();
       const dateValidation = await checkDateRangeValidity(
         storyId,
         bookingStartDate,
         bookingEndDate,
         session
+      );
+      trackDatabaseOperation(
+        'find',
+        'Story',
+        Date.now() - dateValidationStart,
+        dateValidation.isValid
       );
 
       if (!dateValidation.isValid) {
@@ -216,12 +230,19 @@ export const createBooking = async (
       }
 
       // Check capacity for all dates in the range
+      const capacityCheckStart = Date.now();
       const capacityCheck = await checkCapacityForDateRange(
         storyId,
         bookingStartDate,
         bookingEndDate,
         totalTravellers,
         session
+      );
+      trackDatabaseOperation(
+        'aggregate',
+        'Booking',
+        Date.now() - capacityCheckStart,
+        capacityCheck.hasCapacity
       );
 
       if (!capacityCheck.hasCapacity) {
@@ -247,7 +268,19 @@ export const createBooking = async (
         status: 'confirmed',
       });
 
+      const saveStart = Date.now();
       await booking.save({ session });
+      trackDatabaseOperation('create', 'Booking', Date.now() - saveStart, true);
+
+      const totalDuration = Date.now() - startTime;
+      trackBookingOperation('create', booking.bookingId, userId, true);
+
+      trackBusinessMetric('booking_created', 1, {
+        storyId,
+        totalTravellers,
+        totalPayment: processedPaymentDetails[0]?.totalPayment,
+        duration: totalDuration,
+      });
 
       // Return success response
       res.status(201).json({
@@ -265,6 +298,17 @@ export const createBooking = async (
       });
     });
   } catch (error: any) {
+    const totalDuration = Date.now() - startTime;
+    trackBookingOperation('create', undefined, userId, false);
+
+    trackError(error, {
+      operation: 'create_booking',
+      storyId,
+      userId,
+      totalTravellers,
+      duration: totalDuration,
+    });
+
     console.error('Booking creation failed:', error);
     res.status(400).json({
       success: false,

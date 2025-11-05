@@ -8,6 +8,13 @@ import Story, {
   ItineraryDay,
 } from '../../Model/storyModel';
 import s3Service from '../../Service/s3Service';
+import {
+  trackStoryOperation,
+  trackDatabaseOperation,
+  trackFileUpload,
+  trackError,
+  trackBusinessMetric,
+} from '../../Utils/newrelicInstrumentation';
 
 // Helpers
 const calculateNoOfDays = (start: Date, end: Date): number => {
@@ -26,6 +33,9 @@ export const createStory = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const startTime = Date.now();
+  const userId = (req as any).jwtUser?.userId;
+
   try {
     // Extract user information from JWT token
     // You can now access: userId, email, fullName from the authenticated user
@@ -38,6 +48,7 @@ export const createStory = async (
 
     // Check if user has Host role
     if (role !== 'Host') {
+      trackStoryOperation('create_unauthorized', undefined, userId, false);
       res.status(403).json({
         success: false,
         message: 'Only users with Host role can create stories',
@@ -65,6 +76,7 @@ export const createStory = async (
       !endDate ||
       !maxTravelersPerDay
     ) {
+      trackStoryOperation('create_validation_failed', undefined, userId, false);
       res.status(400).json({
         success: false,
         message:
@@ -78,6 +90,7 @@ export const createStory = async (
     try {
       noOfDays = calculateNoOfDays(new Date(startDate), new Date(endDate));
     } catch (e: any) {
+      trackStoryOperation('create_invalid_dates', undefined, userId, false);
       res.status(400).json({ success: false, message: e.message });
       return;
     }
@@ -96,7 +109,20 @@ export const createStory = async (
       createdBy: userId, // Added: Set createdBy to the authenticated user's ID
     });
 
+    const saveStart = Date.now();
     const created = await story.save();
+    trackDatabaseOperation('create', 'Story', Date.now() - saveStart, true);
+
+    const totalDuration = Date.now() - startTime;
+    trackStoryOperation('create', created.storyId, userId, true);
+
+    trackBusinessMetric('story_created', 1, {
+      state,
+      maxTravelersPerDay,
+      noOfDays,
+      duration: totalDuration,
+    });
+
     res.status(201).json({
       success: true,
       message: 'Story created',
@@ -104,6 +130,15 @@ export const createStory = async (
       storyId: created.storyId,
     });
   } catch (error: any) {
+    const totalDuration = Date.now() - startTime;
+    trackStoryOperation('create', undefined, userId, false);
+
+    trackError(error, {
+      operation: 'create_story',
+      userId,
+      duration: totalDuration,
+    });
+
     console.error('Error creating story:', error);
     res.status(500).json({
       success: false,
@@ -273,12 +308,23 @@ export const updateStoryImages = async (
   req: Request<{ id: string }>,
   res: Response
 ): Promise<void> => {
-  try {
-    const { id } = req.params; // storyId
+  const startTime = Date.now();
+  const userId = (req as any).jwtUser?.userId;
+  const { id } = req.params;
 
+  try {
     // Check if story exists
+    const storyCheckStart = Date.now();
     const existingStory = await Story.findOne({ storyId: id });
+    trackDatabaseOperation(
+      'find',
+      'Story',
+      Date.now() - storyCheckStart,
+      !!existingStory
+    );
+
     if (!existingStory) {
+      trackStoryOperation('update_images_story_not_found', id, userId, false);
       res.status(404).json({ success: false, message: 'Story not found' });
       return;
     }
@@ -286,11 +332,13 @@ export const updateStoryImages = async (
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     const storyImages: StoryImages = {};
+    let totalFileSize = 0;
 
     // Upload banner image
     if (files.bannerImage && files.bannerImage.length > 0) {
       const bannerFile = files.bannerImage[0];
       if (bannerFile) {
+        totalFileSize += bannerFile.size;
         const bannerUrl = await s3Service.uploadFile(
           bannerFile,
           `stories/${id}/banner`
@@ -300,6 +348,7 @@ export const updateStoryImages = async (
           key: bannerKey,
           url: bannerUrl,
         };
+        trackFileUpload('banner_image', bannerFile.size, true, userId);
       }
     }
 
@@ -307,6 +356,7 @@ export const updateStoryImages = async (
     if (files.storyImage && files.storyImage.length > 0) {
       const storyFile = files.storyImage[0];
       if (storyFile) {
+        totalFileSize += storyFile.size;
         const storyUrl = await s3Service.uploadFile(
           storyFile,
           `stories/${id}/main`
@@ -316,6 +366,7 @@ export const updateStoryImages = async (
           key: storyKey,
           url: storyUrl,
         };
+        trackFileUpload('story_image', storyFile.size, true, userId);
       }
     }
 
@@ -324,6 +375,7 @@ export const updateStoryImages = async (
       const otherImages: ImageData[] = [];
       for (const file of files.otherImages) {
         if (file) {
+          totalFileSize += file.size;
           const otherUrl = await s3Service.uploadFile(
             file,
             `stories/${id}/others`
@@ -333,22 +385,44 @@ export const updateStoryImages = async (
             key: otherKey,
             url: otherUrl,
           });
+          trackFileUpload('other_image', file.size, true, userId);
         }
       }
       storyImages.otherImages = otherImages;
     }
 
     // Update the story with the new images
+    const updateStart = Date.now();
     const updated = await Story.findOneAndUpdate(
       { storyId: id },
       { storyImages },
       { new: true, runValidators: true }
     );
+    trackDatabaseOperation(
+      'update',
+      'Story',
+      Date.now() - updateStart,
+      !!updated
+    );
 
     if (!updated) {
+      trackStoryOperation('update_images', id, userId, false);
       res.status(404).json({ success: false, message: 'Story not found' });
       return;
     }
+
+    const totalDuration = Date.now() - startTime;
+    trackStoryOperation('update_images', id, userId, true);
+
+    trackBusinessMetric('story_images_uploaded', 1, {
+      storyId: id,
+      totalFileSize,
+      imageCount:
+        (files.bannerImage?.length || 0) +
+        (files.storyImage?.length || 0) +
+        (files.otherImages?.length || 0),
+      duration: totalDuration,
+    });
 
     res.status(200).json({
       success: true,
@@ -356,6 +430,16 @@ export const updateStoryImages = async (
       data: updated,
     });
   } catch (error: any) {
+    const totalDuration = Date.now() - startTime;
+    trackStoryOperation('update_images', id, userId, false);
+
+    trackError(error, {
+      operation: 'update_story_images',
+      storyId: id,
+      userId,
+      duration: totalDuration,
+    });
+
     console.error('Error updating story images:', error);
     res.status(500).json({
       success: false,

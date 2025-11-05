@@ -122,6 +122,10 @@ dist
 # Firebase service account key (NEVER commit this file!)
 serviceAccountKey.json
 
+# New Relic logs and temporary files
+newrelic_agent.log
+newrelic_daemon.log
+
 # TernJS port file
 .tern-port
 

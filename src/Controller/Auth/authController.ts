@@ -13,15 +13,19 @@ import {
   LoginResponse,
   GoogleLoginResponse,
 } from '../../Types';
-import newrelic from 'newrelic';
+import {
+  trackFirebaseAuth,
+  trackDatabaseOperation,
+  trackError,
+  trackBusinessMetric,
+} from '../../Utils/newrelicInstrumentation';
 
-/**
- * Register a new user (traveller or admin) with Firebase Authentication
- */
 export const registerUser = async (
   req: Request<{}, ApiResponse, RegisterUserRequest>,
   res: Response<ApiResponse>
 ): Promise<void> => {
+  const startTime = Date.now();
+
   try {
     const { fullName, email, password, role } = req.body;
 
@@ -44,10 +48,18 @@ export const registerUser = async (
     }
 
     // Check if role exists and is ACTIVE
+    const roleStartTime = Date.now();
     const roleDoc = await Role.findOne({
       roleName: role,
       roleStatus: 'ACTIVE',
     });
+    trackDatabaseOperation(
+      'find',
+      'Role',
+      Date.now() - roleStartTime,
+      !!roleDoc
+    );
+
     if (!roleDoc) {
       res.status(400).json({
         success: false,
@@ -57,7 +69,15 @@ export const registerUser = async (
     }
 
     // Check if user already exists in our database
+    const userCheckStartTime = Date.now();
     const existingUser = await AuthUser.findOne({ email });
+    trackDatabaseOperation(
+      'find',
+      'AuthUser',
+      Date.now() - userCheckStartTime,
+      true
+    );
+
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -77,6 +97,13 @@ export const registerUser = async (
       });
     } catch (firebaseError: any) {
       console.error('Firebase user creation error:', firebaseError);
+
+      trackFirebaseAuth('register', 'unknown', false, {
+        email,
+        role,
+        error: firebaseError.message,
+        errorCode: firebaseError.code,
+      });
 
       if (firebaseError.code === 'auth/email-already-exists') {
         res.status(400).json({
@@ -106,7 +133,14 @@ export const registerUser = async (
       firebaseUid: firebaseUser.uid,
     });
 
+    const saveStartTime = Date.now();
     const savedUser = await newUser.save();
+    trackDatabaseOperation(
+      'create',
+      'AuthUser',
+      Date.now() - saveStartTime,
+      true
+    );
 
     // Generate custom Firebase token for immediate login
     const firebaseToken = await auth.createCustomToken(firebaseUser.uid);
@@ -118,6 +152,15 @@ export const registerUser = async (
       role: savedUser.role,
       fullName: savedUser.fullName,
     });
+
+    const totalDuration = Date.now() - startTime;
+    trackFirebaseAuth('register', savedUser.userId, true, {
+      email,
+      role,
+      duration: totalDuration,
+    });
+
+    trackBusinessMetric('user_registration', 1, { role });
 
     res.status(201).json({
       success: true,
@@ -137,6 +180,14 @@ export const registerUser = async (
       },
     });
   } catch (error) {
+    const totalDuration = Date.now() - startTime;
+    trackError(error as Error, {
+      operation: 'user_registration',
+      email: req.body.email,
+      role: req.body.role,
+      duration: totalDuration,
+    });
+
     console.error('Error registering traveller:', error);
     res.status(500).json({
       success: false,
@@ -273,21 +324,27 @@ export const login = async (
     });
 
     // Log successful authentication
-    newrelic.recordCustomEvent('AuthenticationEvent', {
-      eventType: 'login_success',
-      userId: user.userId,
+    trackFirebaseAuth('login', user.userId, true, {
       method: 'email_password',
       duration: Date.now() - startTime,
+      hasFirebaseUid: !!user.firebaseUid,
     });
+
+    trackBusinessMetric('user_login', 1, { method: 'email_password' });
   } catch (error) {
     // Log authentication failures
-    newrelic.recordCustomEvent('AuthenticationEvent', {
-      eventType: 'login_failure',
+    trackFirebaseAuth('login', 'unknown', false, {
       email: req.body.email,
-      error: error.message,
+      method: 'email_password',
+      error: error instanceof Error ? error.message : 'Unknown error',
       duration: Date.now() - startTime,
     });
-    newrelic.noticeError(error);
+
+    trackError(error instanceof Error ? error : new Error(String(error)), {
+      operation: 'user_login',
+      email: req.body.email,
+      method: 'email_password',
+    });
 
     console.error('Error during login:', error);
     res.status(500).json({
@@ -297,14 +354,12 @@ export const login = async (
   }
 };
 
-/**
- * Google Sign-In Authentication
- * Frontend sends Firebase ID token after Google Sign-In
- */
 export const googleLogin = async (
   req: Request<{}, ApiResponse<GoogleLoginResponse>, GoogleLoginRequest>,
   res: Response<ApiResponse<GoogleLoginResponse>>
 ): Promise<void> => {
+  const startTime = Date.now();
+
   try {
     // Accept token from body, query, or Authorization header for flexibility
     const authHeader = req.headers.authorization;
@@ -330,6 +385,12 @@ export const googleLogin = async (
       decodedToken = await auth.verifyIdToken(idToken);
     } catch (firebaseError: any) {
       console.error('Firebase token verification error:', firebaseError);
+
+      trackFirebaseAuth('google_login', 'unknown', false, {
+        error: firebaseError.message,
+        errorCode: firebaseError.code,
+      });
+
       res.status(401).json({
         success: false,
         message: 'Invalid or expired Firebase token',
@@ -348,15 +409,29 @@ export const googleLogin = async (
     }
 
     // Check if user exists in our database
+    const userCheckStartTime = Date.now();
     let user = await AuthUser.findOne({
       $or: [{ email }, { firebaseUid: uid }],
     });
+    trackDatabaseOperation(
+      'find',
+      'AuthUser',
+      Date.now() - userCheckStartTime,
+      true
+    );
 
     if (user) {
       // User exists, update Firebase UID if not set
       if (!user.firebaseUid) {
         user.firebaseUid = uid;
+        const updateStartTime = Date.now();
         await user.save();
+        trackDatabaseOperation(
+          'update',
+          'AuthUser',
+          Date.now() - updateStartTime,
+          true
+        );
       }
     } else {
       // User doesn't exist, create new user with default 'traveller' role
@@ -364,10 +439,17 @@ export const googleLogin = async (
       const defaultRole = 'traveller';
 
       // Verify the default role exists and is active
+      const roleCheckStartTime = Date.now();
       const roleDoc = await Role.findOne({
         roleName: defaultRole,
         roleStatus: 'ACTIVE',
       });
+      trackDatabaseOperation(
+        'find',
+        'Role',
+        Date.now() - roleCheckStartTime,
+        !!roleDoc
+      );
 
       if (!roleDoc) {
         res.status(500).json({
@@ -385,7 +467,22 @@ export const googleLogin = async (
         // No password needed for Google sign-in users
       });
 
+      const createStartTime = Date.now();
       await user.save();
+      trackDatabaseOperation(
+        'create',
+        'AuthUser',
+        Date.now() - createStartTime,
+        true
+      );
+
+      trackFirebaseAuth('google_register', user.userId, true, {
+        email,
+        name,
+        duration: Date.now() - startTime,
+      });
+
+      trackBusinessMetric('user_registration', 1, { method: 'google' });
     }
 
     // Generate JWT token for our app
@@ -399,6 +496,15 @@ export const googleLogin = async (
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
     );
+
+    const totalDuration = Date.now() - startTime;
+    trackFirebaseAuth('google_login', user.userId, true, {
+      email,
+      duration: totalDuration,
+      userExisted: !!user.createdAt,
+    });
+
+    trackBusinessMetric('user_login', 1, { method: 'google' });
 
     res.status(200).json({
       success: true,
@@ -416,6 +522,12 @@ export const googleLogin = async (
       },
     });
   } catch (error) {
+    const totalDuration = Date.now() - startTime;
+    trackError(error as Error, {
+      operation: 'google_login',
+      duration: totalDuration,
+    });
+
     console.error('Error during Google login:', error);
     res.status(500).json({
       success: false,

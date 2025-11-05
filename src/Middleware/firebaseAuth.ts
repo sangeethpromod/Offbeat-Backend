@@ -3,6 +3,11 @@ import { auth } from '../Config/firebase';
 import { FirebaseUser } from '../Types';
 import AuthUser from '../Model/authModel';
 import Role from '../Model/roleModel';
+import {
+  trackFirebaseAuth,
+  trackDatabaseOperation,
+  trackError,
+} from '../Utils/newrelicInstrumentation';
 
 /**
  * Firebase Token Verification Middleware
@@ -53,8 +58,16 @@ export const verifyFirebaseToken = async (
 
     req.user = firebaseUser;
 
+    // Track successful Firebase authentication
+    trackFirebaseAuth('verify_token', firebaseUser.uid, true, {
+      email: firebaseUser.email,
+      hasName: !!firebaseUser.name,
+      emailVerified: firebaseUser.email_verified,
+    });
+
     // Ensure an AuthUser exists in MongoDB for this Firebase user
     try {
+      const startTime = Date.now();
       const defaultRole = process.env.DEFAULT_ROLE || 'traveller';
 
       // Try to find by firebaseUid first, then by email
@@ -87,6 +100,14 @@ export const verifyFirebaseToken = async (
           firebaseUid: firebaseUser.uid,
         });
         await userDoc.save();
+
+        const duration = Date.now() - startTime;
+        trackDatabaseOperation('create', 'AuthUser', duration, true);
+        trackFirebaseAuth('auto_provision', firebaseUser.uid, true, {
+          role: defaultRole,
+          email: firebaseUser.email,
+        });
+
         console.info(
           `Auto-provisioned AuthUser for Firebase UID ${firebaseUser.uid}`
         );
@@ -94,16 +115,39 @@ export const verifyFirebaseToken = async (
         // Backfill missing firebaseUid
         userDoc.firebaseUid = firebaseUser.uid;
         await userDoc.save();
+
+        const duration = Date.now() - startTime;
+        trackDatabaseOperation('update', 'AuthUser', duration, true);
+
         console.info(`Backfilled firebaseUid for user ${userDoc.email}`);
+      } else {
+        const duration = Date.now() - startTime;
+        trackDatabaseOperation('find', 'AuthUser', duration, true);
       }
     } catch (provisionErr) {
       console.error('Auto-provisioning AuthUser failed:', provisionErr);
+      trackError(provisionErr as Error, {
+        operation: 'auto_provision',
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email,
+      });
       // Do not block the request purely due to provisioning failure
     }
 
     next();
   } catch (error) {
     console.error('Error verifying Firebase token:', error);
+
+    // Track authentication failure
+    trackFirebaseAuth('verify_token', 'unknown', false, {
+      error: (error as Error).message,
+      errorCode: (error as any).code,
+    });
+
+    trackError(error as Error, {
+      operation: 'firebase_token_verification',
+      authHeader: !!req.headers.authorization,
+    });
 
     // Handle specific Firebase Auth errors
     const firebaseError = error as any;

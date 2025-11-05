@@ -15,6 +15,7 @@ import feeRoutes from './Routes/feeRoute';
 import legalRoutes from './Routes/legalRoutes';
 import bookingRoutes from './Routes/booking';
 import { swaggerUi, specs } from './Config/swagger';
+import { apiTrackingMiddleware } from './Utils/newrelicInstrumentation';
 
 const app = express();
 const PORT: number = parseInt(process.env.PORT || '8080', 10);
@@ -26,6 +27,9 @@ database.connect();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// New Relic API tracking middleware
+app.use(apiTrackingMiddleware);
 
 // Routes
 app.use('/api/roles', roleRoutes);

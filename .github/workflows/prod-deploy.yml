@@ -26,3 +26,4 @@ jobs:
           docker run -d -p 8080:8080 --name offbeat-backend --restart unless-stopped offbeat-backend:latest
 
           echo "✅ Deployment completed successfully!"
+ 
