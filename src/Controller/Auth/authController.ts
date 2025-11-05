@@ -13,6 +13,7 @@ import {
   LoginResponse,
   GoogleLoginResponse,
 } from '../../Types';
+import newrelic from 'newrelic';
 
 /**
  * Register a new user (traveller or admin) with Firebase Authentication
@@ -151,6 +152,8 @@ export const login = async (
   req: Request<{}, ApiResponse<LoginResponse>, LoginRequest>,
   res: Response<ApiResponse<LoginResponse>>
 ): Promise<void> => {
+  const startTime = Date.now();
+
   try {
     const { email, password } = req.body;
 
@@ -268,7 +271,24 @@ export const login = async (
         firebaseToken,
       },
     });
+
+    // Log successful authentication
+    newrelic.recordCustomEvent('AuthenticationEvent', {
+      eventType: 'login_success',
+      userId: user.userId,
+      method: 'email_password',
+      duration: Date.now() - startTime,
+    });
   } catch (error) {
+    // Log authentication failures
+    newrelic.recordCustomEvent('AuthenticationEvent', {
+      eventType: 'login_failure',
+      email: req.body.email,
+      error: error.message,
+      duration: Date.now() - startTime,
+    });
+    newrelic.noticeError(error);
+
     console.error('Error during login:', error);
     res.status(500).json({
       success: false,
