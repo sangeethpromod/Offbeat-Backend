@@ -9,18 +9,6 @@ import Story, {
 } from '../../Model/storyModel';
 import s3Service from '../../Service/s3Service';
 
-// Helpers
-const calculateNoOfDays = (start: Date, end: Date): number => {
-  const startTime = new Date(start).setHours(0, 0, 0, 0);
-  const endTime = new Date(end).setHours(0, 0, 0, 0);
-  if (endTime < startTime) {
-    throw new Error('endDate must be greater than or equal to startDate');
-  }
-  const msInDay = 24 * 60 * 60 * 1000;
-  const diff = Math.round((endTime - startTime) / msInDay);
-  return Math.max(1, diff || 1);
-};
-
 // STEP 1: Create story (POST /api/stories)
 export const createStory = async (
   req: Request,
@@ -50,8 +38,7 @@ export const createStory = async (
       storyDescription,
       state,
       location,
-      startDate,
-      endDate,
+      storyLength,
       maxTravelersPerDay,
     } = req.body as Partial<IStory>;
 
@@ -61,24 +48,23 @@ export const createStory = async (
       !storyDescription ||
       !state ||
       !location ||
-      !startDate ||
-      !endDate ||
+      !storyLength ||
       !maxTravelersPerDay
     ) {
       res.status(400).json({
         success: false,
         message:
-          'Required fields: storyTitle, storyDescription, state, location, startDate, endDate, maxTravelersPerDay',
+          'Required fields: storyTitle, storyDescription, state, location, storyLength, maxTravelersPerDay',
       });
       return;
     }
 
-    // Validate date order and calculate number of days
-    let noOfDays: number;
-    try {
-      noOfDays = calculateNoOfDays(new Date(startDate), new Date(endDate));
-    } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+    // Validate storyLength
+    if (storyLength < 1) {
+      res.status(400).json({
+        success: false,
+        message: 'storyLength must be at least 1 day',
+      });
       return;
     }
 
@@ -87,11 +73,8 @@ export const createStory = async (
       storyDescription,
       state,
       location,
-      startDate,
-      endDate,
-      noOfDays,
+      storyLength,
       maxTravelersPerDay,
-      currentCapacity: maxTravelersPerDay, // Automatically set currentCapacity to maxTravelersPerDay
       status: 'DRAFT',
       createdBy: userId, // Added: Set createdBy to the authenticated user's ID
     });
@@ -457,6 +440,39 @@ export const updateStoryItinerary = async (
     });
   } catch (error: any) {
     console.error('Error updating story itinerary:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+// STEP 6: Publish story (PATCH /api/stories/:id/publish)
+export const publishStory = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params; // storyId
+
+    const updated = await Story.findOneAndUpdate(
+      { storyId: id },
+      { status: 'PUBLISHED' },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Story published successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error publishing story:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',

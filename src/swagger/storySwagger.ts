@@ -172,6 +172,80 @@
  *           example: false
  *         message:
  *           type: string
+ *
+ *     UpdateStoryImagesRequest:
+ *       type: object
+ *       properties:
+ *         bannerImage:
+ *           type: string
+ *           format: binary
+ *           description: "Banner image file for the story"
+ *         storyImage:
+ *           type: string
+ *           format: binary
+ *           description: "Main story image file"
+ *         otherImages:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: binary
+ *           description: "Additional story images (multiple files allowed)"
+ *
+ *     StoryActivity:
+ *       type: object
+ *       required:
+ *         - type
+ *         - activityName
+ *       properties:
+ *         type:
+ *           type: string
+ *           example: "Adventure"
+ *         activityName:
+ *           type: string
+ *           example: "Beach Trek"
+ *         activityDescription:
+ *           type: string
+ *           example: "2km coastal walk to hidden beach"
+ *         activityTime:
+ *           type: string
+ *           example: "09:00 AM"
+ *         activityDuration:
+ *           type: string
+ *           example: "3 hours"
+ *         activityLocation:
+ *           type: string
+ *           example: "Gokarna Coast"
+ *
+ *     StoryItineraryDay:
+ *       type: object
+ *       required:
+ *         - day
+ *         - activities
+ *       properties:
+ *         day:
+ *           type: integer
+ *           minimum: 1
+ *           example: 1
+ *         activities:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/StoryActivity'
+ *
+ *     UpdateStoryItineraryRequest:
+ *       type: object
+ *       properties:
+ *         pickUpTime:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-11-10T08:00:00.000Z"
+ *         dropOffTime:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-11-12T18:00:00.000Z"
+ *         itinerary:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/StoryItineraryDay'
  */
 
 /**
@@ -304,39 +378,131 @@
 
 /**
  * @swagger
- * /api/stories/my-stories:
- *   get:
- *     summary: Get all stories created by the authenticated user
- *     description: Retrieves all stories created by the currently authenticated user. The user ID is extracted from the JWT token and compared with the createdBy field in the database.
+ * /api/stories/create-story/{id}/images:
+ *   patch:
+ *     summary: Update story images (Step 4)
+ *     description: Upload and update story images including banner, main story image, and additional images. Images are uploaded to AWS S3.
  *     tags: [Stories]
- *     security:
- *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: storyId from create response
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateStoryImagesRequest'
+ *           encoding:
+ *             bannerImage:
+ *               contentType: image/jpeg, image/png, image/webp
+ *             storyImage:
+ *               contentType: image/jpeg, image/png, image/webp
+ *             otherImages:
+ *               contentType: image/jpeg, image/png, image/webp
  *     responses:
  *       200:
- *         description: Stories retrieved successfully
+ *         description: Story images updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Stories retrieved successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     stories:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/StoryResponse'
- *                     count:
- *                       type: number
- *                       example: 3
- *       401:
- *         description: Unauthorized - Invalid or missing token
+ *               $ref: '#/components/schemas/StoryResponse'
+ *       400:
+ *         description: Invalid file format or missing story
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Story not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error or S3 upload failure
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/**
+ * @swagger
+ * /api/stories/create-story/{id}/itinerary:
+ *   patch:
+ *     summary: Update story itinerary (Step 5)
+ *     description: Update story pickup/dropoff times and detailed day-by-day itinerary with activities. Validates itinerary structure and activity requirements.
+ *     tags: [Stories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: storyId from create response
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateStoryItineraryRequest'
+ *           example:
+ *             pickUpTime: "2025-11-10T08:00:00.000Z"
+ *             dropOffTime: "2025-11-12T18:00:00.000Z"
+ *             itinerary:
+ *               - day: 1
+ *                 activities:
+ *                   - type: "Transportation"
+ *                     activityName: "Pickup from meeting point"
+ *                     activityTime: "08:00 AM"
+ *                     activityDuration: "30 minutes"
+ *                     activityLocation: "Gokarna Bus Stand"
+ *                   - type: "Adventure"
+ *                     activityName: "Beach Trek"
+ *                     activityDescription: "2km coastal walk to hidden beach"
+ *                     activityTime: "09:00 AM"
+ *                     activityDuration: "3 hours"
+ *                     activityLocation: "Gokarna Coast"
+ *               - day: 2
+ *                 activities:
+ *                   - type: "Cultural"
+ *                     activityName: "Temple Visit"
+ *                     activityDescription: "Visit ancient Mahabaleshwar Temple"
+ *                     activityTime: "10:00 AM"
+ *                     activityDuration: "2 hours"
+ *                     activityLocation: "Mahabaleshwar Temple"
+ *     responses:
+ *       200:
+ *         description: Story itinerary updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/StoryResponse'
+ *       400:
+ *         description: Validation error (invalid itinerary structure, missing activities, etc.)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalid_itinerary:
+ *                 value:
+ *                   success: false
+ *                   message: "Itinerary must be an array"
+ *               missing_activity_fields:
+ *                 value:
+ *                   success: false
+ *                   message: "Each activity must have type and activityName"
+ *               invalid_day_number:
+ *                 value:
+ *                   success: false
+ *                   message: "Each itinerary day must have a valid day number (minimum 1)"
+ *       404:
+ *         description: Story not found
  *         content:
  *           application/json:
  *             schema:

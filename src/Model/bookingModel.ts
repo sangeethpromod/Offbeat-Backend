@@ -5,7 +5,6 @@ export interface Traveller {
   fullName: string;
   emailAddress: string;
   phoneNumber: string;
-  noOfTravellers: number;
 }
 
 export interface PaymentDetail {
@@ -20,10 +19,11 @@ export interface IBooking extends Document {
   storyId: mongoose.Types.ObjectId; // References Story._id
   startDate: Date;
   endDate: Date;
+  noOfTravellers: number;
   travellers: Traveller[];
   paymentDetails: PaymentDetail[];
   status: 'confirmed' | 'cancelled';
-  totalTravellers: number; // Virtual field
+  totalTravellers: number; // Virtual field (same as noOfTravellers)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,7 +33,6 @@ const TravellerSchema = new Schema<Traveller>(
     fullName: { type: String, required: true, trim: true },
     emailAddress: { type: String, required: true, trim: true, lowercase: true },
     phoneNumber: { type: String, required: true, trim: true },
-    noOfTravellers: { type: Number, required: true, min: 1 },
   },
   { _id: false }
 );
@@ -64,6 +63,7 @@ const BookingSchema = new Schema<IBooking>(
     },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
+    noOfTravellers: { type: Number, required: true, min: 1 },
     travellers: {
       type: [TravellerSchema],
       required: true,
@@ -102,10 +102,7 @@ BookingSchema.index({ storyId: 1, startDate: 1, endDate: 1 });
 
 // Virtual for totalTravellers
 BookingSchema.virtual('totalTravellers').get(function (this: IBooking) {
-  return this.travellers.reduce(
-    (sum, traveller) => sum + traveller.noOfTravellers,
-    0
-  );
+  return this.noOfTravellers;
 });
 
 // Ensure virtual fields are serialized

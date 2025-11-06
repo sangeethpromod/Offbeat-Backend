@@ -284,10 +284,10 @@ export const login = async (
     newrelic.recordCustomEvent('AuthenticationEvent', {
       eventType: 'login_failure',
       email: req.body.email,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       duration: Date.now() - startTime,
     });
-    newrelic.noticeError(error);
+    newrelic.noticeError(error instanceof Error ? error : new Error(String(error)));
 
     console.error('Error during login:', error);
     res.status(500).json({

@@ -5,6 +5,7 @@ import {
   updateStoryPage3,
   updateStoryImages,
   updateStoryItinerary,
+  publishStory,
 } from '../Controller/Story/StoryController';
 import { getStoriesByUser } from '../Controller/Story/getStoryController';
 import upload from '../Utils/multerConfig';
@@ -37,6 +38,9 @@ storyRoutes.patch(
 
 // STEP 5: PATCH /api/stories/:id/itinerary
 storyRoutes.patch('/create-story/:id/page5', updateStoryItinerary);
+
+// STEP 6: PATCH /api/stories/:id/publish
+storyRoutes.patch('/create-story/:id/publish', publishStory);
 
 // GET /api/stories/my-stories - Get all stories created by the authenticated user
 storyRoutes.get('/my-stories', getStoriesByUser);

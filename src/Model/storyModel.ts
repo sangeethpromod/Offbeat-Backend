@@ -46,10 +46,7 @@ export interface IStory extends Document {
   storyDescription: string;
   state: string;
   location: string;
-  startDate: Date;
-  endDate: Date;
-  noOfDays: number;
-  currentCapacity: number;
+  storyLength: number; // Duration in days
   maxTravelersPerDay: number;
   status: 'DRAFT' | 'INCOMPLETE' | 'PUBLISHED';
   createdBy: string; // Added: User ID of the creator
@@ -135,9 +132,7 @@ const StorySchema = new Schema<IStory>(
     storyDescription: { type: String, required: true, trim: true },
     state: { type: String, required: true, trim: true },
     location: { type: String, required: true, trim: true },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
-    noOfDays: { type: Number, required: true, min: 1 },
+    storyLength: { type: Number, required: true, min: 1 },
     maxTravelersPerDay: { type: Number, required: true, min: 1 },
     status: {
       type: String,

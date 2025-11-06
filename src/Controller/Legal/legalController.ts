@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Legal, { ILegal } from '../../Model/legal';
+import Legal, { ILegal } from '../../Model/legalModel';
 
 // GET /api/legal - Get all legal documents
 export const getAllLegal = async (

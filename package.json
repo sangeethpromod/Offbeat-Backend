@@ -14,6 +14,7 @@
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
     "seed:roles": "ts-node seedRoles.ts",
+    "migrate:stories": "ts-node src/Migration/updateStorySchema.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

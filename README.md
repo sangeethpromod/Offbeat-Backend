@@ -50,13 +50,22 @@ Welcome to the Offbeat Backend documentation. This system provides a comprehensi
    npm run seed:roles
    ```
 
-5. **Start Development Server**
+5. **Run Database Migrations** (if needed)
+
+   ⚠️ **Important**: Always backup your database before running migrations!
+
+   ```bash
+   # Update story schema (removes old date fields, adds storyLength)
+   npm run migrate:stories
+   ```
+
+6. **Start Development Server**
 
    ```bash
    npm run dev
    ```
 
-6. **View API Documentation**
+7. **View API Documentation**
 
    ```bash
    # Start server and visit: http://localhost:8080/api-docs
