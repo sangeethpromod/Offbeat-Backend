@@ -2,7 +2,7 @@ name: Deploy Offbeat Backend
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
             -p 8080:8080 \
             --name offbeat-backend \
             --restart unless-stopped \
-            --env-file .env.dev \
+            --env-file /home/ubuntu/Offbeat-Backend/.env.dev \
             offbeat-backend:latest
 
           echo "✅ Deployment completed successfully!"
