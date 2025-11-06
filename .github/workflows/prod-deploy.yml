@@ -22,7 +22,12 @@ jobs:
           docker stop offbeat-backend || true
           docker rm offbeat-backend || true
 
-          echo "🚀 Running new container..."
-          docker run -d -p 8080:8080 --name offbeat-backend --restart unless-stopped offbeat-backend:latest
+          echo "🚀 Running new container with environment variables..."
+          docker run -d \
+            -p 8080:8080 \
+            --name offbeat-backend \
+            --restart unless-stopped \
+            --env-file .env.dev \
+            offbeat-backend:latest
 
           echo "✅ Deployment completed successfully!"
