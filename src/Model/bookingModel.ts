@@ -16,7 +16,8 @@ export interface PaymentDetail {
 
 export interface IBooking extends Document {
   bookingId: string;
-  storyId: mongoose.Types.ObjectId; // References Story._id
+  storyId: string; // Story UUID from Story.storyId
+  userId: string; // User ID of the person who made the booking
   startDate: Date;
   endDate: Date;
   noOfTravellers: number;
@@ -56,8 +57,12 @@ const BookingSchema = new Schema<IBooking>(
       index: true,
     },
     storyId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Story',
+      type: String,
+      required: true,
+      index: true,
+    },
+    userId: {
+      type: String,
       required: true,
       index: true,
     },

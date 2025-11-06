@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 const expressValidator = require('express-validator');
 const { body, validationResult } = expressValidator;
-import Booking from '../../Model/bookingModel';
-import Story from '../../Model/storyModel';
+import Booking from '../../../Model/bookingModel';
+import Story from '../../../Model/storyModel';
 import newrelic from 'newrelic';
 
 export interface CreateBookingRequest {
@@ -112,7 +112,7 @@ async function getBookedTravellersForDate(
   const result = await Booking.aggregate([
     {
       $match: {
-        storyId: new mongoose.Types.ObjectId(storyId),
+        storyId: storyId, // Now storyId is a string UUID
         status: 'confirmed',
         startDate: { $lte: date },
         endDate: { $gte: date },
@@ -139,8 +139,8 @@ async function checkCapacityForDateRange(
   newBookingTravellers: number,
   session: mongoose.ClientSession
 ): Promise<{ hasCapacity: boolean; maxCapacity: number }> {
-  // Get story max capacity
-  const story = await Story.findById(storyId)
+  // Get story max capacity by storyId (UUID)
+  const story = await Story.findOne({ storyId })
     .select('maxTravelersPerDay')
     .session(session)
     .lean();
@@ -200,7 +200,7 @@ export const createBooking = async (
   // Log booking attempt
   newrelic.recordCustomEvent('BookingCreationStarted', {
     storyId,
-    userId: (req as any).user?.id,
+    userId: (req as any).jwtUser?.userId,
     startDate,
     endDate,
     noOfTravellers,
@@ -211,7 +211,7 @@ export const createBooking = async (
   if (travellers.length !== noOfTravellers) {
     newrelic.recordCustomEvent('BookingValidationFailed', {
       storyId,
-      userId: (req as any).user?.id,
+      userId: (req as any).jwtUser?.userId,
       expectedTravellers: noOfTravellers,
       providedTravellers: travellers.length,
     });
@@ -229,10 +229,9 @@ export const createBooking = async (
 
   try {
     await session.withTransaction(async () => {
-      // First, find the story by storyId (UUID) to get the MongoDB _id
+      // First, find the story by storyId (UUID) to validate it exists
       const story = await Story.findOne({ storyId })
-        .select('_id storyLength status maxTravelersPerDay')
-        .session(session)
+        .select('_id storyId storyLength status maxTravelersPerDay')
         .lean();
 
       if (!story) {
@@ -256,7 +255,7 @@ export const createBooking = async (
       if (!dateValidation.isValid) {
         newrelic.recordCustomEvent('BookingDateValidationFailed', {
           storyId,
-          userId: (req as any).user?.id,
+          userId: (req as any).jwtUser?.userId,
           startDate,
           endDate,
           storyStatus: dateValidation.story?.status,
@@ -270,7 +269,7 @@ export const createBooking = async (
       // Log successful date validation
       newrelic.recordCustomEvent('BookingDateValidationPassed', {
         storyId,
-        userId: (req as any).user?.id,
+        userId: (req as any).jwtUser?.userId,
         startDate,
         endDate,
         storyLength: dateValidation.story?.storyLength,
@@ -278,7 +277,7 @@ export const createBooking = async (
 
       // Check capacity for all dates in the range
       const capacityCheck = await checkCapacityForDateRange(
-        storyObjectId.toString(),
+        story.storyId, // Use the storyId from the database
         bookingStartDate,
         bookingEndDate,
         totalTravellers,
@@ -288,7 +287,7 @@ export const createBooking = async (
       if (!capacityCheck.hasCapacity) {
         newrelic.recordCustomEvent('BookingCapacityValidationFailed', {
           storyId,
-          userId: (req as any).user?.id,
+          userId: (req as any).jwtUser?.userId,
           requestedTravellers: totalTravellers,
           maxCapacity: capacityCheck.maxCapacity,
           startDate,
@@ -302,7 +301,7 @@ export const createBooking = async (
       // Log successful capacity validation
       newrelic.recordCustomEvent('BookingCapacityValidationPassed', {
         storyId,
-        userId: (req as any).user?.id,
+        userId: (req as any).jwtUser?.userId,
         requestedTravellers: totalTravellers,
         maxCapacity: capacityCheck.maxCapacity,
         startDate,
@@ -316,9 +315,10 @@ export const createBooking = async (
         discount: detail.discount ?? 0,
       }));
 
-      // Create booking with the MongoDB ObjectId
+      // Create booking with the storyId from the database
       const booking = new Booking({
-        storyId: storyObjectId,
+        storyId: story.storyId, // Get storyId from the found story document
+        userId: (req as any).jwtUser?.userId,
         startDate: bookingStartDate,
         endDate: bookingEndDate,
         noOfTravellers: totalTravellers,
@@ -333,7 +333,7 @@ export const createBooking = async (
       newrelic.recordCustomEvent('BookingCreatedSuccessfully', {
         bookingId: booking.bookingId,
         storyId,
-        userId: (req as any).user?.id,
+        userId: (req as any).jwtUser?.userId,
         totalTravellers: booking.totalTravellers,
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),
@@ -345,7 +345,7 @@ export const createBooking = async (
         message: 'Booking created successfully',
         data: {
           bookingId: booking.bookingId,
-          storyId: storyId, // Return the UUID storyId for client reference
+          storyId: story.storyId, // Return the storyId from the database
           startDate: booking.startDate,
           endDate: booking.endDate,
           totalTravellers: booking.totalTravellers,
@@ -357,7 +357,7 @@ export const createBooking = async (
   } catch (error: any) {
     newrelic.recordCustomEvent('BookingCreationFailed', {
       storyId: req.body.storyId,
-      userId: (req as any).user?.id,
+      userId: (req as any).jwtUser?.userId,
       errorMessage: error.message,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
@@ -365,7 +365,7 @@ export const createBooking = async (
     });
     newrelic.noticeError(error, {
       storyId: req.body.storyId,
-      userId: (req as any).user?.id,
+      userId: (req as any).jwtUser?.userId,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
       noOfTravellers: req.body.noOfTravellers,
