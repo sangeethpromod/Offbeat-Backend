@@ -218,159 +218,421 @@
 
 /**
  * @swagger
- * /api/bookings:
+ * /api/bookings/create-booking:
  *   post:
- *     summary: Create a new booking
- *     description: Creates a booking for a published story with capacity validation. The booking duration must match the story's length, and there must be available capacity for all dates in the booking range.
- *     tags: [Bookings]
+ *     summary: Create a new booking (Traveller)
+ *     description: |
+ *       Create a booking for a story with comprehensive validation.
+ *
+ *       **Validation Process:**
+ *       - Story exists and is published
+ *       - Booking duration matches story length
+ *       - Capacity available for all dates in range
+ *       - Traveller details match traveller count
+ *       - Transaction-based to ensure data consistency
+ *
+ *       **Capacity Management:**
+ *       - Checks available spots for each date in booking range
+ *       - Prevents overbooking beyond maxTravelersPerDay
+ *
+ *       **Performance:**
+ *       - Uses MongoDB transactions
+ *       - Comprehensive New Relic monitoring
+ *     tags: [Booking - Traveller]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateBookingRequest'
- *           example:
- *             storyId: "0f8b15d1-3458-4477-925a-af51b6066ea5"
- *             startDate: "2025-11-10"
- *             endDate: "2025-11-14"
- *             noOfTravellers: 2
- *             travellers:
- *               - fullName: "Reyvanth"
- *                 emailAddress: "reyvanth@example.com"
- *                 phoneNumber: "+919876543210"
- *               - fullName: "Rahul Nair"
- *                 emailAddress: "rahul@example.com"
- *                 phoneNumber: "+919812345678"
- *             paymentDetails:
- *               - totalBase: 12500
- *                 platformFee: 50
- *                 discount: 500
- *                 totalPayment: 12050
+ *             type: object
+ *             required:
+ *               - storyId
+ *               - startDate
+ *               - endDate
+ *               - noOfTravellers
+ *               - travellers
+ *               - paymentDetails
+ *             properties:
+ *               storyId:
+ *                 type: string
+ *                 format: uuid
+ *                 example: "550e8400-e29b-41d4-a716-446655440000"
+ *                 description: UUID of the story to book
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-11-10"
+ *                 description: Booking start date (ISO 8601)
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-11-15"
+ *                 description: Booking end date (ISO 8601)
+ *               noOfTravellers:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 3
+ *                 description: Total number of travellers
+ *               travellers:
+ *                 type: array
+ *                 minItems: 1
+ *                 description: Array of traveller details (must match noOfTravellers)
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - fullName
+ *                     - emailAddress
+ *                     - phoneNumber
+ *                   properties:
+ *                     fullName:
+ *                       type: string
+ *                       example: "John Doe"
+ *                     emailAddress:
+ *                       type: string
+ *                       format: email
+ *                       example: "john@example.com"
+ *                     phoneNumber:
+ *                       type: string
+ *                       example: "+1234567890"
+ *               paymentDetails:
+ *                 type: array
+ *                 minItems: 1
+ *                 description: Payment breakdown details
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - totalBase
+ *                     - totalPayment
+ *                   properties:
+ *                     totalBase:
+ *                       type: number
+ *                       minimum: 0
+ *                       example: 1500
+ *                     platformFee:
+ *                       type: number
+ *                       minimum: 0
+ *                       example: 50
+ *                       description: Defaults to 50 if not provided
+ *                     discount:
+ *                       type: number
+ *                       minimum: 0
+ *                       example: 100
+ *                       description: Defaults to 0 if not provided
+ *                     totalPayment:
+ *                       type: number
+ *                       minimum: 0
+ *                       example: 1450
  *     responses:
  *       201:
  *         description: Booking created successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/BookingResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Booking created successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     bookingId:
+ *                       type: string
+ *                       format: uuid
+ *                     storyId:
+ *                       type: string
+ *                     startDate:
+ *                       type: string
+ *                       format: date-time
+ *                     endDate:
+ *                       type: string
+ *                       format: date-time
+ *                     totalTravellers:
+ *                       type: integer
+ *                     status:
+ *                       type: string
+ *                       example: "confirmed"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
  *       400:
- *         description: Validation failed or booking constraints not met
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             examples:
- *               validation_error:
- *                 value:
- *                   success: false
- *                   message: "Validation failed"
- *                   errors: [...]
- *               duration_mismatch:
- *                 value:
- *                   success: false
- *                   message: "Booking duration must match story length or story is not published"
- *               capacity_exceeded:
- *                 value:
- *                   success: false
- *                   message: "Booking exceeds maximum capacity of 10 travellers per day"
- *               traveller_count_mismatch:
- *                 value:
- *                   success: false
- *                   message: "Number of traveller details (2) must match noOfTravellers (3)"
+ *         description: Validation failed or capacity exceeded
  *       401:
- *         description: Unauthorized - Invalid or missing token
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Story not found
+ *
+ * /api/bookings/traveller/my-bookings:
+ *   get:
+ *     summary: Get traveller's bookings (Production-optimized)
+ *     description: |
+ *       Retrieve all confirmed bookings for the authenticated traveller.
+ *
+ *       **Performance Optimizations:**
+ *       - Single aggregation pipeline with index-aware queries
+ *       - Memory-efficient projection stages
+ *       - Optimized $lookup for story details
+ *       - Date formatting done in MongoDB (not JavaScript)
+ *       - Comprehensive New Relic instrumentation
+ *
+ *       **Recommended Index:** `{ userId: 1, status: 1, startDate: 1 }`
+ *
+ *       **Response Format:**
+ *       - Formatted dates (e.g., "10-15 Nov 2025")
+ *       - Story details included
+ *       - Total price and traveller count
+ *     tags: [Booking - Traveller]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Bookings retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Traveller bookings retrieved successfully"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       storyName:
+ *                         type: string
+ *                         example: "Mountain Adventure"
+ *                       location:
+ *                         type: string
+ *                         example: "Shimla"
+ *                       state:
+ *                         type: string
+ *                         example: "Himachal Pradesh"
+ *                       totalprice:
+ *                         type: number
+ *                         example: 1450
+ *                       Dates:
+ *                         type: string
+ *                         example: "10-15 Nov 2025"
+ *                       totalTravellers:
+ *                         type: integer
+ *                         example: 3
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       example: 5
+ *                     queryTimeMs:
+ *                       type: number
+ *                       example: 45.23
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  *       500:
- *         description: Internal server error
+ *         description: Failed to retrieve bookings
+ *
+ * /api/bookings/traveller-bookings:
+ *   get:
+ *     summary: Get categorized traveller bookings (Past/Upcoming)
+ *     description: |
+ *       Retrieve bookings categorized into past and upcoming based on end date.
+ *
+ *       **Categorization Logic:**
+ *       - **Upcoming:** End date is today or in the future
+ *       - **Past:** End date is before today
+ *
+ *       **Includes:** Story details, dates, location, traveller count
+ *     tags: [Booking - Host/Admin]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Categorized bookings retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-
-/**
- * @swagger
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "User bookings retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     upcoming:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           bookingId:
+ *                             type: string
+ *                           storyId:
+ *                             type: string
+ *                           storyName:
+ *                             type: string
+ *                           storylocation:
+ *                             type: string
+ *                           storyState:
+ *                             type: string
+ *                           Dates:
+ *                             type: object
+ *                             properties:
+ *                               startDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                               endDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                           totalNoOfTravellers:
+ *                             type: integer
+ *                     past:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *
+ * /api/bookings/details/{bookingId}:
+ *   get:
+ *     summary: Get detailed booking summary (Admin/Host only)
+ *     description: |
+ *       Retrieve comprehensive booking details including story information, traveller details, and payment breakdown.
+ *
+ *       **Access Control:** Admin or Host role required
+ *
+ *       **Includes:**
+ *       - Complete story information
+ *       - All traveller details
+ *       - Payment breakdown
+ *       - Formatted date range
+ *       - Primary contact phone number
+ *     tags: [Booking - Host/Admin]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Unique booking identifier
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *     responses:
+ *       200:
+ *         description: Booking details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Booking details retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     storyName:
+ *                       type: string
+ *                       example: "Mountain Adventure"
+ *                     storyDescription:
+ *                       type: string
+ *                     location:
+ *                       type: string
+ *                       example: "Shimla"
+ *                     state:
+ *                       type: string
+ *                       example: "Himachal Pradesh"
+ *                     Dates:
+ *                       type: string
+ *                       example: "10-15 Nov 2025"
+ *                     phone:
+ *                       type: string
+ *                       example: "+1234567890"
+ *                       description: Primary traveller's phone number
+ *                     totalTravellers:
+ *                       type: integer
+ *                       example: 3
+ *                     totalBase:
+ *                       type: number
+ *                       example: 1500
+ *                     platformFee:
+ *                       type: number
+ *                       example: 50
+ *                     discount:
+ *                       type: number
+ *                       example: 100
+ *                     totalPayment:
+ *                       type: number
+ *                       example: 1450
+ *                     travellers:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           travellerName:
+ *                             type: string
+ *                           travellerEmail:
+ *                             type: string
+ *                           phoneNumber:
+ *                             type: string
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         description: Booking not found
+ *
  * /api/bookings/analytics:
  *   post:
- *     summary: Get booking analytics for a specific date
- *     description: Returns comprehensive booking analytics for a given date including active stories, traveller counts, capacity information, and detailed booking breakdowns with itinerary days.
- *     tags: [Bookings]
+ *     summary: Get booking analytics for specific date (Admin/Host)
+ *     description: |
+ *       Retrieve booking analytics and statistics for a specific date.
+ *
+ *       **Metrics Include:**
+ *       - Total bookings
+ *       - Total travellers
+ *       - Revenue metrics
+ *       - Booking status distribution
+ *
+ *       **Use Case:** Dashboard analytics, reporting, capacity planning
+ *     tags: [Booking - Host/Admin]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/GetBookingsByDateRequest'
- *           example:
- *             date: "2025-11-10"
+ *             type: object
+ *             required:
+ *               - date
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-11-10"
+ *                 description: Date for analytics (ISO 8601)
  *     responses:
  *       200:
- *         description: Booking analytics retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/BookingAnalyticsResponse'
- *             example:
- *               success: true
- *               message: "Booking analytics retrieved successfully"
- *               data:
- *                 date: "2025-11-10"
- *                 activeStories: 2
- *                 totalTravellers: 8
- *                 totalSpace: 30
- *                 spaceLeft: 22
- *                 stories:
- *                   - storyId: "0f8b15d1-3458-4477-925a-af51b6066ea5"
- *                     title: "Mountain Adventure"
- *                     maxTravelersPerDay: 15
- *                     storyLength: 5
- *                     bookings:
- *                       - bookingId: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
- *                         startDate: "2025-11-10T00:00:00.000Z"
- *                         endDate: "2025-11-14T00:00:00.000Z"
- *                         totalNoOfTravellers: 3
- *                         itineraryDay: 1
- *                       - bookingId: "a1b2c3d4-5678-9012-3456-789012345678"
- *                         startDate: "2025-11-09T00:00:00.000Z"
- *                         endDate: "2025-11-13T00:00:00.000Z"
- *                         totalNoOfTravellers: 2
- *                         itineraryDay: 2
- *                   - storyId: "1a2b3c4d-5678-9012-3456-789012345678"
- *                     title: "Desert Safari"
- *                     maxTravelersPerDay: 15
- *                     storyLength: 3
- *                     bookings:
- *                       - bookingId: "b2c3d4e5-6789-0123-4567-890123456789"
- *                         startDate: "2025-11-10T00:00:00.000Z"
- *                         endDate: "2025-11-12T00:00:00.000Z"
- *                         totalNoOfTravellers: 3
- *                         itineraryDay: 1
+ *         description: Analytics retrieved successfully
  *       400:
- *         description: Date parameter is required
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               message: "Date is required"
+ *         description: Invalid date format
  *       401:
- *         description: Unauthorized - Invalid or missing token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         $ref: '#/components/responses/UnauthorizedError'
  */

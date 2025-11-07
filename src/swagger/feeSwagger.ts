@@ -76,58 +76,100 @@
  * @swagger
  * /api/fees:
  *   post:
- *     summary: Create a new fee
- *     description: Creates a new fee; feeId is auto-generated (ofb-feestrcut-001, etc.).
+ *     summary: Create a new platform fee
+ *     description: |
+ *       Create a new fee structure for the platform.
+ *
+ *       **Auto-generated ID:** feeId follows pattern "ofb-feestrcut-001", "ofb-feestrcut-002", etc.
+ *       **Examples:** Platform fee, Service charge, Processing fee
  *     tags: [Fees]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateFeeRequest'
+ *             type: object
+ *             required:
+ *               - feeName
+ *               - feeAmount
+ *             properties:
+ *               feeName:
+ *                 type: string
+ *                 example: "Platform Fee"
+ *                 description: Name of the fee
+ *               feeAmount:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 50
+ *                 description: Fee amount in currency
  *     responses:
  *       201:
  *         description: Fee created successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/FeeSuccessResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Fee created successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     feeId:
+ *                       type: string
+ *                       example: "ofb-feestrcut-001"
+ *                     feeName:
+ *                       type: string
+ *                     feeAmount:
+ *                       type: number
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
  *       400:
- *         description: Validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               message: "Required fields: feeName, feeAmount"
+ *         $ref: '#/components/responses/ValidationError'
  *       409:
- *         description: Duplicate key (rare; retry)
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Duplicate fee (retry with different ID)
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *
  *   get:
- *     summary: Get all fees
- *     description: Retrieves the list of all fee structures.
+ *     summary: Get all platform fees
+ *     description: Retrieve complete list of all fee structures configured in the system
  *     tags: [Fees]
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Fee list
+ *         description: Fee list retrieved successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/FeeListResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       feeId:
+ *                         type: string
+ *                       feeName:
+ *                         type: string
+ *                       feeAmount:
+ *                         type: number
+ *                       createdAt:
+ *                         type: string
+ *                       updatedAt:
+ *                         type: string
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
