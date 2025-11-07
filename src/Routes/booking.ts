@@ -4,21 +4,42 @@ import {
   validateBooking,
 } from '../Controller/Booking/TravellerSide/bookStoryController';
 import { getTravellerBookings } from '../Controller/Booking/HostSide/bookingListSummaryController';
+import { getTravellerBookingsSimple } from '../Controller/Booking/TravellerSide/getTravellerBokking';
 import { getBookingsByDate } from '../Controller/Booking/HostSide/bookingAnalyticsController';
+import { getBookingDetails } from '../Controller/Booking/HostSide/bookingDetailsController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
+import { requireAdminOrHost } from '../Middleware/roleAuth';
 
 const bookingRoutes = Router();
 
 // Apply authentication middleware to all booking routes
 bookingRoutes.use(verifyAccessToken);
 
-// POST /api/bookings - Create a new booking
-bookingRoutes.post('/create-booking', validateBooking, createBooking);
+/**
+/**
+ *Host APIs
+ * /
+ */
 
 // GET /api/bookings/traveller-bookings - Get traveller's categorized bookings (Past/Upcoming)
 bookingRoutes.get('/traveller-bookings', getTravellerBookings);
 
 // POST /api/bookings/analytics - Get booking analytics for a specific date
 bookingRoutes.post('/analytics', getBookingsByDate);
+
+// GET /api/bookings/details/:bookingId - Get booking details summary (Admin/Host only)
+bookingRoutes.get('/details/:bookingId', requireAdminOrHost, getBookingDetails);
+
+/**
+/**
+ *Traveller APIs
+ * /
+ */
+
+// POST /api/bookings - Create a new booking
+bookingRoutes.post('/create-booking', validateBooking, createBooking);
+
+// GET /api/bookings/my-bookings - Get traveller's bookings with simplified details
+bookingRoutes.get('/traveller/my-bookings', getTravellerBookingsSimple);
 
 export default bookingRoutes;

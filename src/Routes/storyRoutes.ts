@@ -9,21 +9,10 @@ import {
   adminApproveStory,
 } from '../Controller/Story/HostLevel/StoryController';
 import { getStoriesByUser } from '../Controller/Story/HostLevel/getStoryController';
-import {
-  getRecentStories,
-  getMostBookedStories,
-} from '../Controller/MetricStories/homepageApi';
 import upload from '../Utils/multerConfig';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 
 const storyRoutes = Router();
-
-// Public routes (no authentication required)
-// GET /api/stories/recent - Get top 20 recently posted stories
-storyRoutes.get('/recent', getRecentStories);
-
-// GET /api/stories/most-booked - Get top 20 most booked stories
-storyRoutes.get('/most-booked', getMostBookedStories);
 
 // Apply authentication middleware to all story routes below
 storyRoutes.use(verifyAccessToken);
