@@ -2,7 +2,7 @@ name: Deploy Offbeat Backend
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   workflow_dispatch:
 
 jobs:
@@ -10,19 +10,19 @@ jobs:
     runs-on: [self-hosted, linux, x64, freelance]
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build and Deploy with Docker
+      - name: Pull and Deploy
         run: |
-          echo "🐳 Building Docker image..."
+          cd /home/ubuntu/Offbeat-Backend
+          echo "📦 Pulling latest changes..."
+          git fetch origin main
+          git reset --hard origin/main
+
+          echo "🐳 Building and deploying container..."
           docker build -t offbeat-backend:latest .
 
-          echo "🛑 Stopping old container (if running)..."
           docker stop offbeat-backend || true
           docker rm offbeat-backend || true
 
-          echo "🚀 Running new container with environment variables..."
           docker run -d \
             -p 8080:8080 \
             --name offbeat-backend \
@@ -30,4 +30,4 @@ jobs:
             --env-file /home/ubuntu/Offbeat-Backend/.env.dev \
             offbeat-backend:latest
 
-          echo "✅ Deployment completed successfully!"
+          echo "✅ Deployment successful!"
