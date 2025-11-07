@@ -6,14 +6,26 @@ import {
   updateStoryImages,
   updateStoryItinerary,
   publishStory,
-} from '../Controller/Story/StoryController';
-import { getStoriesByUser } from '../Controller/Story/getStoryController';
+  adminApproveStory,
+} from '../Controller/Story/HostLevel/StoryController';
+import { getStoriesByUser } from '../Controller/Story/HostLevel/getStoryController';
+import {
+  getRecentStories,
+  getMostBookedStories,
+} from '../Controller/MetricStories/homepageApi';
 import upload from '../Utils/multerConfig';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 
 const storyRoutes = Router();
 
-// Apply authentication middleware to all story routes
+// Public routes (no authentication required)
+// GET /api/stories/recent - Get top 20 recently posted stories
+storyRoutes.get('/recent', getRecentStories);
+
+// GET /api/stories/most-booked - Get top 20 most booked stories
+storyRoutes.get('/most-booked', getMostBookedStories);
+
+// Apply authentication middleware to all story routes below
 storyRoutes.use(verifyAccessToken);
 
 // STEP 1: POST /api/stories
@@ -41,6 +53,9 @@ storyRoutes.patch('/create-story/:id/page5', updateStoryItinerary);
 
 // STEP 6: PATCH /api/stories/:id/publish
 storyRoutes.patch('/create-story/:id/publish', publishStory);
+
+// STEP 7: PATCH /api/stories/:id/approve
+storyRoutes.patch('/create-story/:id/approve', adminApproveStory);
 
 // GET /api/stories/my-stories - Get all stories created by the authenticated user
 storyRoutes.get('/my-stories', getStoriesByUser);

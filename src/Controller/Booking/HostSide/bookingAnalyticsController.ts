@@ -33,8 +33,8 @@ export const getBookingsByDate = async (
       userId: (req as any).user?.id,
     });
 
-    // Find all published stories
-    const publishedStories = await Story.find({ status: 'PUBLISHED' })
+    // Find all approved stories (stories must be approved to be bookable)
+    const approvedStories = await Story.find({ status: 'APPROVED' })
       .select('storyId storyTitle storyLength maxTravelersPerDay')
       .lean();
 
@@ -43,11 +43,12 @@ export const getBookingsByDate = async (
     let totalSpace = 0;
     const storiesData: any[] = [];
 
-    // Process each published story
-    for (const story of publishedStories) {
+    // Process each approved story
+    for (const story of approvedStories) {
       // Find bookings for this story that overlap with the query date
+      // Note: Booking model uses storyId as UUID string, not ObjectId
       const overlappingBookings = await Booking.find({
-        storyId: story._id,
+        storyId: story.storyId, // Use UUID string, not ObjectId
         status: 'confirmed',
         startDate: { $lte: queryDate },
         endDate: { $gte: queryDate },

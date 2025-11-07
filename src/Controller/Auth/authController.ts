@@ -35,7 +35,7 @@ export const registerUser = async (
     }
 
     // Validate role - only allow 'traveller' or 'admin' (case sensitive)
-    if (role !== 'traveller' && role !== 'admin') {
+    if (role !== 'traveller' && role !== 'admin' && role !== 'host') {
       res.status(400).json({
         success: false,
         message: 'Invalid role. Role must be either "traveller" or "admin"',
@@ -287,7 +287,9 @@ export const login = async (
       error: error instanceof Error ? error.message : String(error),
       duration: Date.now() - startTime,
     });
-    newrelic.noticeError(error instanceof Error ? error : new Error(String(error)));
+    newrelic.noticeError(
+      error instanceof Error ? error : new Error(String(error))
+    );
 
     console.error('Error during login:', error);
     res.status(500).json({

@@ -46,9 +46,18 @@ export interface IStory extends Document {
   storyDescription: string;
   state: string;
   location: string;
+  tags: string[]; // Array of tags, min 4, max 6
   storyLength: number; // Duration in days
   maxTravelersPerDay: number;
-  status: 'DRAFT' | 'INCOMPLETE' | 'PUBLISHED';
+  status:
+    | 'DRAFT'
+    | 'STEP 1 COMPLETED'
+    | 'STEP 2 COMPLETED'
+    | 'STEP 3 COMPLETED'
+    | 'STEP 4 COMPLETED'
+    | 'STEP 5 COMPLETED'
+    | 'PUBLISHED'
+    | 'APPROVED';
   createdBy: string; // Added: User ID of the creator
   // Step 2
   locationType?: LocationType;
@@ -132,11 +141,30 @@ const StorySchema = new Schema<IStory>(
     storyDescription: { type: String, required: true, trim: true },
     state: { type: String, required: true, trim: true },
     location: { type: String, required: true, trim: true },
+    tags: {
+      type: [String],
+      required: true,
+      validate: {
+        validator: function (arr: string[]) {
+          return arr.length >= 4 && arr.length <= 6;
+        },
+        message: 'Tags must contain between 4 and 6 items',
+      },
+    },
     storyLength: { type: Number, required: true, min: 1 },
     maxTravelersPerDay: { type: Number, required: true, min: 1 },
     status: {
       type: String,
-      enum: ['DRAFT', 'INCOMPLETE', 'PUBLISHED'],
+      enum: [
+        'DRAFT',
+        'STEP 1 COMPLETED',
+        'STEP 2 COMPLETED',
+        'STEP 3 COMPLETED',
+        'STEP 4 COMPLETED',
+        'STEP 5 COMPLETED',
+        'PUBLISHED',
+        'APPROVED',
+      ],
       default: 'DRAFT',
       required: true,
     },

@@ -6,8 +6,8 @@ import Story, {
   StoryImages,
   ImageData,
   ItineraryDay,
-} from '../../Model/storyModel';
-import s3Service from '../../Service/s3Service';
+} from '../../../Model/storyModel';
+import s3Service from '../../../Service/s3Service';
 
 // STEP 1: Create story (POST /api/stories)
 export const createStory = async (
@@ -25,7 +25,7 @@ export const createStory = async (
     } = (req as any).jwtUser;
 
     // Check if user has Host role
-    if (role !== 'Host') {
+    if (role !== 'host') {
       res.status(403).json({
         success: false,
         message: 'Only users with Host role can create stories',
@@ -38,6 +38,7 @@ export const createStory = async (
       storyDescription,
       state,
       location,
+      tags,
       storyLength,
       maxTravelersPerDay,
     } = req.body as Partial<IStory>;
@@ -48,13 +49,31 @@ export const createStory = async (
       !storyDescription ||
       !state ||
       !location ||
+      !tags ||
       !storyLength ||
       !maxTravelersPerDay
     ) {
       res.status(400).json({
         success: false,
         message:
-          'Required fields: storyTitle, storyDescription, state, location, storyLength, maxTravelersPerDay',
+          'Required fields: storyTitle, storyDescription, state, location, tags, storyLength, maxTravelersPerDay',
+      });
+      return;
+    }
+
+    // Validate tags
+    if (!Array.isArray(tags)) {
+      res.status(400).json({
+        success: false,
+        message: 'Tags must be an array',
+      });
+      return;
+    }
+
+    if (tags.length < 4 || tags.length > 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Tags must contain between 4 and 6 items',
       });
       return;
     }
@@ -73,9 +92,10 @@ export const createStory = async (
       storyDescription,
       state,
       location,
+      tags,
       storyLength,
       maxTravelersPerDay,
-      status: 'DRAFT',
+      status: 'STEP 1 COMPLETED',
       createdBy: userId, // Added: Set createdBy to the authenticated user's ID
     });
 
@@ -162,6 +182,7 @@ export const updateStoryPage2 = async (
         dropOffGoogleMapLink: dropOffGoogleMapLink || undefined,
         hostName,
         hostDescription,
+        status: 'STEP 2 COMPLETED',
       },
       { new: true, runValidators: true }
     );
@@ -228,6 +249,7 @@ export const updateStoryPage3 = async (
         platformFee,
         totalPrice,
         priceBreakdown,
+        status: 'STEP 3 COMPLETED',
       },
       { new: true, runValidators: true }
     );
@@ -324,7 +346,7 @@ export const updateStoryImages = async (
     // Update the story with the new images
     const updated = await Story.findOneAndUpdate(
       { storyId: id },
-      { storyImages },
+      { storyImages, status: 'STEP 4 COMPLETED' },
       { new: true, runValidators: true }
     );
 
@@ -428,6 +450,13 @@ export const updateStoryItinerary = async (
       runValidators: true,
     });
 
+    // Update status to STEP 5 COMPLETED
+    await Story.findOneAndUpdate(
+      { storyId: id },
+      { status: 'STEP 5 COMPLETED' },
+      { new: true, runValidators: true }
+    );
+
     if (!updated) {
       res.status(404).json({ success: false, message: 'Story not found' });
       return;
@@ -469,6 +498,51 @@ export const publishStory = async (
     res.status(200).json({
       success: true,
       message: 'Story published successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error publishing story:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+// STEP 7: Publish story (PATCH /api/stories/:id/approve)
+export const adminApproveStory = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    // Extract user information from JWT token
+    const { email: _email, fullName: _fullName, role } = (req as any).jwtUser;
+
+    // Check if user has Admin role
+    if (role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Only users with Admin role can approve stories',
+      });
+      return;
+    }
+
+    const { id } = req.params; // storyId
+
+    const updated = await Story.findOneAndUpdate(
+      { storyId: id },
+      { status: 'APPROVED' },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Story has been approved successfully',
       data: updated,
     });
   } catch (error: any) {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   createBooking,
   validateBooking,
-} from '../Controller/Booking/HostSide/bookStoryController';
+} from '../Controller/Booking/TravellerSide/bookStoryController';
 import { getTravellerBookings } from '../Controller/Booking/HostSide/bookingListSummaryController';
 import { getBookingsByDate } from '../Controller/Booking/HostSide/bookingAnalyticsController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';

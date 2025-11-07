@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Story from '../../Model/storyModel';
+import Story from '../../../Model/storyModel';
 
 /**
  * GET /api/stories/my-stories - Get all stories created by the authenticated user

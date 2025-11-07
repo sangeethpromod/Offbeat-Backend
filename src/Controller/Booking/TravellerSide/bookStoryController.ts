@@ -68,40 +68,6 @@ export const validateBooking = [
 ];
 
 /**
- * Check if booking dates are within story availability
- */
-async function checkDateRangeValidity(
-  storyId: string,
-  startDate: Date,
-  endDate: Date,
-  session: mongoose.ClientSession
-): Promise<{ isValid: boolean; story?: any }> {
-  const story = await Story.findById(storyId)
-    .select('storyLength status')
-    .session(session)
-    .lean();
-
-  if (!story) {
-    return { isValid: false };
-  }
-
-  if (story.status !== 'PUBLISHED') {
-    return { isValid: false };
-  }
-
-  // Calculate booking duration
-  const bookingDuration = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (bookingDuration !== story.storyLength) {
-    return { isValid: false };
-  }
-
-  return { isValid: true, story };
-}
-
-/**
  * Calculate total booked travellers for a specific date using aggregation
  */
 async function getBookedTravellersForDate(
@@ -198,22 +164,24 @@ export const createBooking = async (
   } = req.body;
 
   // Log booking attempt
-  newrelic.recordCustomEvent('BookingCreationStarted', {
+  console.log('Booking creation started', {
     storyId,
     userId: (req as any).jwtUser?.userId,
     startDate,
     endDate,
     noOfTravellers,
     travellerDetailsCount: travellers.length,
+    timestamp: new Date().toISOString(),
   });
 
   // Validate that travellers array length matches noOfTravellers
   if (travellers.length !== noOfTravellers) {
-    newrelic.recordCustomEvent('BookingValidationFailed', {
+    console.error('Booking validation failed - traveller count mismatch', {
       storyId,
       userId: (req as any).jwtUser?.userId,
       expectedTravellers: noOfTravellers,
       providedTravellers: travellers.length,
+      timestamp: new Date().toISOString(),
     });
     res.status(400).json({
       success: false,
@@ -238,41 +206,70 @@ export const createBooking = async (
         throw new Error('Story not found');
       }
 
-      const storyObjectId = story._id;
-
       // Convert dates
       const bookingStartDate = new Date(startDate);
       const bookingEndDate = new Date(endDate);
 
       // Validate date range against story availability
-      const dateValidation = await checkDateRangeValidity(
-        storyObjectId.toString(),
-        bookingStartDate,
-        bookingEndDate,
-        session
-      );
-
-      if (!dateValidation.isValid) {
-        newrelic.recordCustomEvent('BookingDateValidationFailed', {
+      if (story.status !== 'APPROVED') {
+        console.error('Booking date validation failed - story not approved', {
           storyId,
           userId: (req as any).jwtUser?.userId,
           startDate,
           endDate,
-          storyStatus: dateValidation.story?.status,
-          storyLength: dateValidation.story?.storyLength,
+          storyStatus: story.status,
+          storyLength: story.storyLength,
+          timestamp: new Date().toISOString(),
         });
         throw new Error(
-          'Booking duration must match story length or story is not published'
+          'Booking duration must match story length or story is not approved'
+        );
+      }
+
+      // Calculate booking duration (inclusive of both start and end dates)
+      const bookingDuration =
+        Math.ceil(
+          (bookingEndDate.getTime() - bookingStartDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        ) + 1;
+
+      console.log('Date validation calculation', {
+        startDate: bookingStartDate.toISOString(),
+        endDate: bookingEndDate.toISOString(),
+        timeDifferenceMs: bookingEndDate.getTime() - bookingStartDate.getTime(),
+        daysDifference:
+          (bookingEndDate.getTime() - bookingStartDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+        bookingDuration,
+        storyLength: story.storyLength,
+        willPass: bookingDuration === story.storyLength,
+      });
+
+      if (bookingDuration !== story.storyLength) {
+        console.error('Booking date validation failed - duration mismatch', {
+          storyId,
+          userId: (req as any).jwtUser?.userId,
+          startDate,
+          endDate,
+          storyStatus: story.status,
+          storyLength: story.storyLength,
+          bookingDuration,
+          timestamp: new Date().toISOString(),
+        });
+        throw new Error(
+          'Booking duration must match story length or story is not approved'
         );
       }
 
       // Log successful date validation
-      newrelic.recordCustomEvent('BookingDateValidationPassed', {
+      console.log('Booking date validation passed', {
         storyId,
         userId: (req as any).jwtUser?.userId,
         startDate,
         endDate,
-        storyLength: dateValidation.story?.storyLength,
+        storyLength: story.storyLength,
+        bookingDuration,
+        timestamp: new Date().toISOString(),
       });
 
       // Check capacity for all dates in the range
@@ -285,13 +282,14 @@ export const createBooking = async (
       );
 
       if (!capacityCheck.hasCapacity) {
-        newrelic.recordCustomEvent('BookingCapacityValidationFailed', {
+        console.error('Booking capacity validation failed', {
           storyId,
           userId: (req as any).jwtUser?.userId,
           requestedTravellers: totalTravellers,
           maxCapacity: capacityCheck.maxCapacity,
           startDate,
           endDate,
+          timestamp: new Date().toISOString(),
         });
         throw new Error(
           `Booking exceeds maximum capacity of ${capacityCheck.maxCapacity} travellers per day`
@@ -299,13 +297,14 @@ export const createBooking = async (
       }
 
       // Log successful capacity validation
-      newrelic.recordCustomEvent('BookingCapacityValidationPassed', {
+      console.log('Booking capacity validation passed', {
         storyId,
         userId: (req as any).jwtUser?.userId,
         requestedTravellers: totalTravellers,
         maxCapacity: capacityCheck.maxCapacity,
         startDate,
         endDate,
+        timestamp: new Date().toISOString(),
       });
 
       // Set default platform fee if not provided
@@ -330,13 +329,14 @@ export const createBooking = async (
       await booking.save({ session });
 
       // Log successful booking creation
-      newrelic.recordCustomEvent('BookingCreatedSuccessfully', {
+      console.log('Booking created successfully', {
         bookingId: booking.bookingId,
         storyId,
         userId: (req as any).jwtUser?.userId,
         totalTravellers: booking.totalTravellers,
         startDate: booking.startDate.toISOString(),
         endDate: booking.endDate.toISOString(),
+        timestamp: new Date().toISOString(),
       });
 
       // Return success response
@@ -355,13 +355,15 @@ export const createBooking = async (
       });
     });
   } catch (error: any) {
-    newrelic.recordCustomEvent('BookingCreationFailed', {
+    console.error('Booking creation failed', {
       storyId: req.body.storyId,
       userId: (req as any).jwtUser?.userId,
       errorMessage: error.message,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
       noOfTravellers: req.body.noOfTravellers,
+      timestamp: new Date().toISOString(),
+      stack: error.stack,
     });
     newrelic.noticeError(error, {
       storyId: req.body.storyId,
