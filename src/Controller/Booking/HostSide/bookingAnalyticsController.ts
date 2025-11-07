@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import Booking from '../../Model/bookingModel';
-import Story from '../../Model/storyModel';
+import Booking from '../../../Model/bookingModel';
+import Story from '../../../Model/storyModel';
 import newrelic from 'newrelic';
 
 export interface GetBookingsByDateRequest {

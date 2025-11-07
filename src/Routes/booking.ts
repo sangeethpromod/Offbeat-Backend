@@ -4,7 +4,7 @@ import {
   validateBooking,
 } from '../Controller/Booking/HostSide/bookStoryController';
 import { getTravellerBookings } from '../Controller/Booking/HostSide/bookingListSummaryController';
-import { getBookingsByDate } from '../Controller/Booking/bookingAnalyticsController';
+import { getBookingsByDate } from '../Controller/Booking/HostSide/bookingAnalyticsController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 
 const bookingRoutes = Router();
