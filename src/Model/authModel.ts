@@ -27,6 +27,11 @@ const AuthUserSchema: Schema = new Schema(
       trim: true,
       lowercase: true,
     },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      // Optional field - primarily for travellers
+    },
     password: {
       type: String,
       // Not required initially for hosts - they set password in step 2

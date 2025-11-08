@@ -14,6 +14,7 @@ export interface IAuthUser extends Document {
   userId: string;
   fullName: string;
   email: string;
+  phoneNumber?: string; // Optional phone number for travellers
   password?: string; // Optional since hosts may not have password initially
   role: string;
   isActive: boolean;

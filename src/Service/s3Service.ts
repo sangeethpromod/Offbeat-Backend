@@ -2,6 +2,8 @@ import {
   S3Client,
   PutObjectCommand,
   PutObjectCommandInput,
+  DeleteObjectCommand,
+  DeleteObjectCommandInput,
 } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -152,16 +154,60 @@ class S3Service {
   async uploadLivePicture(file: Express.Multer.File): Promise<string> {
     return this.uploadFile(file, 'images/live-pics');
   }
+
+  /**
+   * Delete a single file from S3 by its key
+   *
+   * @param key - The S3 object key (path) to delete
+   * @returns Promise that resolves when deletion is complete
+   *
+   * @example
+   * ```typescript
+   * await s3Service.deleteFile('documents/uuid.pdf');
+   * ```
+   *
+   * @throws Error if deletion fails
+   */
+  async deleteFile(key: string): Promise<void> {
+    try {
+      const deleteParams: DeleteObjectCommandInput = {
+        Bucket: this.bucketName,
+        Key: key,
+      };
+
+      const command = new DeleteObjectCommand(deleteParams);
+      await this.s3Client.send(command);
+
+      console.log(`Successfully deleted file: ${key}`);
+    } catch (error) {
+      console.error(`Error deleting file from S3 (${key}):`, error);
+      throw new Error(`Failed to delete file from S3: ${key}`);
+    }
+  }
+
+  /**
+   * Delete multiple files from S3 concurrently
+   *
+   * @param keys - Array of S3 object keys to delete
+   * @returns Promise that resolves when all deletions are complete
+   *
+   * @example
+   * ```typescript
+   * await s3Service.deleteMultipleFiles(['file1.pdf', 'file2.jpg']);
+   * ```
+   *
+   * @throws Error if any deletion fails
+   */
+  async deleteMultipleFiles(keys: string[]): Promise<void> {
+    try {
+      const deletePromises = keys.map(key => this.deleteFile(key));
+      await Promise.all(deletePromises);
+      console.log(`Successfully deleted ${keys.length} files`);
+    } catch (error) {
+      console.error('Error deleting multiple files from S3:', error);
+      throw new Error('Failed to delete files from S3');
+    }
+  }
 }
 
-/**
- * Singleton instance of S3Service
- *
- * @example
- * ```typescript
- * import s3Service from '../Service/s3Service';
- *
- * const fileUrl = await s3Service.uploadFile(file, 'uploads');
- * ```
- */
 export default new S3Service();

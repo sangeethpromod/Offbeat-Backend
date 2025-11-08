@@ -553,3 +553,198 @@ export const adminApproveStory = async (
     });
   }
 };
+
+// UPDATE: Update basic story information (PUT /api/stories/:id)
+export const updateStory = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params; // storyId
+    const { userId, role } = (req as any).jwtUser;
+
+    // Check if user has Host role
+    if (role !== 'host') {
+      res.status(403).json({
+        success: false,
+        message: 'Only users with Host role can update stories',
+      });
+      return;
+    }
+
+    const {
+      storyTitle,
+      storyDescription,
+      state,
+      location,
+      tags,
+      storyLength,
+      maxTravelersPerDay,
+    } = req.body as Partial<IStory>;
+
+    // Check if story exists and belongs to the user
+    const existingStory = await Story.findOne({ storyId: id });
+    if (!existingStory) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (existingStory.createdBy !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'You can only update your own stories',
+      });
+      return;
+    }
+
+    // Validate tags if provided
+    if (tags !== undefined) {
+      if (!Array.isArray(tags)) {
+        res.status(400).json({
+          success: false,
+          message: 'Tags must be an array',
+        });
+        return;
+      }
+
+      if (tags.length < 4 || tags.length > 6) {
+        res.status(400).json({
+          success: false,
+          message: 'Tags must contain between 4 and 6 items',
+        });
+        return;
+      }
+    }
+
+    // Validate storyLength if provided
+    if (storyLength !== undefined && storyLength < 1) {
+      res.status(400).json({
+        success: false,
+        message: 'storyLength must be at least 1 day',
+      });
+      return;
+    }
+
+    // Build update object with only provided fields
+    const updateData: Partial<IStory> = {};
+    if (storyTitle !== undefined) updateData.storyTitle = storyTitle;
+    if (storyDescription !== undefined)
+      updateData.storyDescription = storyDescription;
+    if (state !== undefined) updateData.state = state;
+    if (location !== undefined) updateData.location = location;
+    if (tags !== undefined) updateData.tags = tags;
+    if (storyLength !== undefined) updateData.storyLength = storyLength;
+    if (maxTravelersPerDay !== undefined)
+      updateData.maxTravelersPerDay = maxTravelersPerDay;
+
+    const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Story updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+// DELETE: Delete story (DELETE /api/stories/:id)
+export const deleteStory = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params; // storyId
+    const { userId, role } = (req as any).jwtUser;
+
+    // Find the story first
+    const story = await Story.findOne({ storyId: id });
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership (only creator or admin can delete)
+    if (story.createdBy !== userId && role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'You can only delete your own stories',
+      });
+      return;
+    }
+
+    // Delete images from S3 if they exist
+    const imageDeletionPromises: Promise<void>[] = [];
+
+    if (story.storyImages) {
+      // Delete banner image
+      if (story.storyImages.bannerImage?.key) {
+        imageDeletionPromises.push(
+          s3Service.deleteFile(story.storyImages.bannerImage.key)
+        );
+      }
+
+      // Delete story image
+      if (story.storyImages.storyImage?.key) {
+        imageDeletionPromises.push(
+          s3Service.deleteFile(story.storyImages.storyImage.key)
+        );
+      }
+
+      // Delete other images
+      if (
+        story.storyImages.otherImages &&
+        Array.isArray(story.storyImages.otherImages)
+      ) {
+        story.storyImages.otherImages.forEach(img => {
+          if (img.key) {
+            imageDeletionPromises.push(s3Service.deleteFile(img.key));
+          }
+        });
+      }
+    }
+
+    // Wait for all S3 deletions to complete
+    try {
+      await Promise.all(imageDeletionPromises);
+      console.log(
+        `Successfully deleted ${imageDeletionPromises.length} images from S3 for story ${id}`
+      );
+    } catch (s3Error) {
+      console.error('Error deleting images from S3:', s3Error);
+      // Continue with database deletion even if S3 deletion fails
+    }
+
+    // Delete the story from database
+    await Story.findOneAndDelete({ storyId: id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Story and associated images deleted successfully',
+      data: {
+        storyId: id,
+        imagesDeleted: imageDeletionPromises.length,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error deleting story:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};

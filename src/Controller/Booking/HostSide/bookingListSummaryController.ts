@@ -11,11 +11,21 @@ export const getTravellerBookings = async (
 ): Promise<void> => {
   try {
     const userId = (req as any).jwtUser?.userId;
+    const role = (req as any).jwtUser?.role;
 
     if (!userId) {
       res.status(401).json({
         success: false,
         message: 'User not authenticated',
+      });
+      return;
+    }
+
+    // Check if user has Traveller role
+    if (role !== 'traveller') {
+      res.status(403).json({
+        success: false,
+        message: 'Only users with Traveller role can access their bookings',
       });
       return;
     }

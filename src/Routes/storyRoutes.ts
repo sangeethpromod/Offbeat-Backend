@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import {
   createStory,
+  updateStory,
+  deleteStory,
   updateStoryPage2,
   updateStoryPage3,
   updateStoryImages,
@@ -48,5 +50,11 @@ storyRoutes.patch('/create-story/:id/approve', adminApproveStory);
 
 // GET /api/stories/my-stories - Get all stories created by the authenticated user
 storyRoutes.get('/my-stories', getStoriesByUser);
+
+// UPDATE: PUT /api/stories/:id - Update basic story information
+storyRoutes.put('/update-story/:id', updateStory);
+
+// DELETE: DELETE /api/stories/:id - Delete story and S3 images
+storyRoutes.delete('/delete-story/:id', deleteStory);
 
 export default storyRoutes;

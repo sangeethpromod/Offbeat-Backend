@@ -8,19 +8,8 @@ const options = {
       title: 'Offbeat Backend API',
       version: '1.0.0',
       description: `
-# Offbeat Travel Platform API
 
-Comprehensive REST API for the Offbeat travel platform connecting hosts with travellers for unique, authentic travel experiences.
 
-## Features
-
-- **Authentication**: JWT-based auth with Firebase integration, Google Sign-In support
-- **User Management**: Role-based access control (Admin, Host, Traveller)
-- **Story Management**: Multi-step story creation with image uploads and itinerary management
-- **Booking System**: Advanced booking with capacity validation, date range checking, and traveller management
-- **Host Onboarding**: Three-step verification process with document uploads
-- **Analytics**: Booking analytics and metrics for business intelligence
-- **Legal Documents**: Terms, policies, and legal document management
 
 ## Authentication
 
@@ -54,8 +43,8 @@ All responses follow a consistent structure:
         description: 'Development server',
       },
       {
-        url: 'https://api.offbeat.com',
-        description: 'Production server',
+        url: 'https://api-offbeat.westbridgeco.com/api-docs/',
+        description: 'Non-production server',
       },
     ],
     tags: [
