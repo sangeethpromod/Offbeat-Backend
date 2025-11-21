@@ -22,10 +22,10 @@ export const getTravellerBookings = async (
     }
 
     // Check if user has Traveller role
-    if (role !== 'traveller') {
+    if (role !== 'host') {
       res.status(403).json({
         success: false,
-        message: 'Only users with Traveller role can access their bookings',
+        message: 'Only users with Host role can access their bookings',
       });
       return;
     }
