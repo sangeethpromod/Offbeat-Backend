@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import AuthUser from '../../Model/authModel';
+import HostProfile from '../../Model/hostModel';
 
 /**
  * GET /api/traveller/profile/:userId
@@ -41,7 +42,7 @@ export const getTravellerProfile = async (
       return;
     }
 
-    console.log('Retrieving traveller profile:', { userId });
+    console.log('Retrieving profile:', { userId, role: tokenRole });
 
     // Find the user
     const user = await AuthUser.findOne({ userId })
@@ -49,14 +50,65 @@ export const getTravellerProfile = async (
       .lean();
 
     if (!user) {
-      console.log('Traveller profile not found:', { userId });
+      console.log('User profile not found:', { userId });
       res.status(404).json({
         success: false,
-        message: 'Traveller profile not found',
+        message: 'User profile not found',
       });
       return;
     }
 
+    // If token role is host, fetch host profile details
+    if (tokenRole === 'host') {
+      const hostProfile = await HostProfile.findOne({ userId })
+        .select('age gender mobileNumber nationality location aadharNumber livePicUrl')
+        .lean();
+
+      if (!hostProfile) {
+        console.log('Host profile not found, returning with empty fields:', { userId });
+        res.status(200).json({
+          success: true,
+          message: 'Host profile retrieved successfully',
+          data: {
+            userId: user.userId,
+            fullName: user.fullName,
+            email: user.email,
+            phoneNumber: user.phoneNumber || null,
+            age: '',
+            gender: '',
+            mobileNumber: '',
+            nationality: '',
+            location: '',
+            aadharNumber: '',
+            livePicUrl: '',
+          },
+        });
+        return;
+      }
+
+      console.log('Host profile retrieved successfully:', { userId });
+
+      res.status(200).json({
+        success: true,
+        message: 'Host profile retrieved successfully',
+        data: {
+          userId: user.userId,
+          fullName: user.fullName,
+          email: user.email,
+          phoneNumber: user.phoneNumber || null,
+          age: hostProfile.age || '',
+          gender: hostProfile.gender || '',
+          mobileNumber: hostProfile.mobileNumber || '',
+          nationality: hostProfile.nationality || '',
+          location: hostProfile.location || '',
+          aadharNumber: hostProfile.aadharNumber || '',
+          livePicUrl: hostProfile.livePicUrl || '',
+        },
+      });
+      return;
+    }
+
+    // For traveller role, return basic profile
     console.log('Traveller profile retrieved successfully:', { userId });
 
     res.status(200).json({
@@ -70,7 +122,7 @@ export const getTravellerProfile = async (
       },
     });
   } catch (error: any) {
-    console.error('Error retrieving traveller profile:', {
+    console.error('Error retrieving profile:', {
       userId: req.params.userId,
       error: error.message,
       stack: error.stack,
@@ -78,7 +130,7 @@ export const getTravellerProfile = async (
 
     res.status(500).json({
       success: false,
-      message: 'Failed to retrieve traveller profile',
+      message: 'Failed to retrieve profile',
       error: error.message,
     });
   }

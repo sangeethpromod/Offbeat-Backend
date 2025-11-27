@@ -214,7 +214,8 @@ export const registerHostStep3 = async (
     const { userId } = req.params;
     const { location, aadharNumber } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-
+    console.log(req.files, req.body);
+    
     // Validate required fields
     if (!location || !aadharNumber) {
       res.status(400).json({
