@@ -39,26 +39,93 @@ export const createStory = async (
       state,
       location,
       tags,
+      availabilityType,
       storyLength,
       maxTravelersPerDay,
+      startDate,
+      endDate,
+      maxTravellersScheduled,
     } = req.body as Partial<IStory>;
 
-    // Validate required fields
+    // Validate required base fields
     if (
       !storyTitle ||
       !storyDescription ||
       !state ||
       !location ||
       !tags ||
-      !storyLength ||
-      !maxTravelersPerDay
+      !availabilityType
     ) {
       res.status(400).json({
         success: false,
         message:
-          'Required fields: storyTitle, storyDescription, state, location, tags, storyLength, maxTravelersPerDay',
+          'Required fields: storyTitle, storyDescription, state, location, tags, availabilityType',
       });
       return;
+    }
+
+    // Validate availabilityType
+    if (
+      availabilityType !== 'YEAR_ROUND' &&
+      availabilityType !== 'TRAVEL_WITH_STARS'
+    ) {
+      res.status(400).json({
+        success: false,
+        message:
+          'availabilityType must be either YEAR_ROUND or TRAVEL_WITH_STARS',
+      });
+      return;
+    }
+
+    // Conditional validation based on availabilityType
+    if (availabilityType === 'YEAR_ROUND') {
+      if (!storyLength || !maxTravelersPerDay) {
+        res.status(400).json({
+          success: false,
+          message:
+            'For YEAR_ROUND availability, storyLength and maxTravelersPerDay are required',
+        });
+        return;
+      }
+      if (storyLength < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'storyLength must be at least 1 day',
+        });
+        return;
+      }
+      if (maxTravelersPerDay < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'maxTravelersPerDay must be at least 1',
+        });
+        return;
+      }
+    } else if (availabilityType === 'TRAVEL_WITH_STARS') {
+      if (!startDate || !endDate || !maxTravellersScheduled) {
+        res.status(400).json({
+          success: false,
+          message:
+            'For TRAVEL_WITH_STARS availability, startDate, endDate, and maxTravellersScheduled are required',
+        });
+        return;
+      }
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start >= end) {
+        res.status(400).json({
+          success: false,
+          message: 'startDate must be before endDate',
+        });
+        return;
+      }
+      if (maxTravellersScheduled < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'maxTravellersScheduled must be at least 1',
+        });
+        return;
+      }
     }
 
     // Validate tags
@@ -78,26 +145,28 @@ export const createStory = async (
       return;
     }
 
-    // Validate storyLength
-    if (storyLength < 1) {
-      res.status(400).json({
-        success: false,
-        message: 'storyLength must be at least 1 day',
-      });
-      return;
-    }
-
-    const story = new Story({
+    // Build story data conditionally based on availabilityType
+    const storyData: any = {
       storyTitle,
       storyDescription,
       state,
       location,
       tags,
-      storyLength,
-      maxTravelersPerDay,
+      availabilityType,
       status: 'STEP 1 COMPLETED',
-      createdBy: userId, // Added: Set createdBy to the authenticated user's ID
-    });
+      createdBy: userId,
+    };
+
+    if (availabilityType === 'YEAR_ROUND') {
+      storyData.storyLength = storyLength;
+      storyData.maxTravelersPerDay = maxTravelersPerDay;
+    } else if (availabilityType === 'TRAVEL_WITH_STARS') {
+      storyData.startDate = startDate;
+      storyData.endDate = endDate;
+      storyData.maxTravellersScheduled = maxTravellersScheduled;
+    }
+
+    const story = new Story(storyData);
 
     const created = await story.save();
     res.status(201).json({
@@ -578,8 +647,12 @@ export const updateStory = async (
       state,
       location,
       tags,
+      availabilityType,
       storyLength,
       maxTravelersPerDay,
+      startDate,
+      endDate,
+      maxTravellersScheduled,
     } = req.body as Partial<IStory>;
 
     // Check if story exists and belongs to the user
@@ -596,6 +669,98 @@ export const updateStory = async (
         message: 'You can only update your own stories',
       });
       return;
+    }
+
+    // Determine the availabilityType to validate against
+    const currentAvailabilityType =
+      availabilityType || existingStory.availabilityType;
+
+    // Validate availabilityType if provided
+    if (availabilityType !== undefined) {
+      if (
+        availabilityType !== 'YEAR_ROUND' &&
+        availabilityType !== 'TRAVEL_WITH_STARS'
+      ) {
+        res.status(400).json({
+          success: false,
+          message:
+            'availabilityType must be either YEAR_ROUND or TRAVEL_WITH_STARS',
+        });
+        return;
+      }
+    }
+
+    // Conditional validation based on availabilityType
+    if (currentAvailabilityType === 'YEAR_ROUND') {
+      // For YEAR_ROUND, storyLength and maxTravelersPerDay should be provided or already exist
+      const finalStoryLength =
+        storyLength !== undefined ? storyLength : existingStory.storyLength;
+      const finalMaxTravelersPerDay =
+        maxTravelersPerDay !== undefined
+          ? maxTravelersPerDay
+          : existingStory.maxTravelersPerDay;
+
+      if (!finalStoryLength || !finalMaxTravelersPerDay) {
+        res.status(400).json({
+          success: false,
+          message:
+            'For YEAR_ROUND availability, storyLength and maxTravelersPerDay are required',
+        });
+        return;
+      }
+      if (storyLength !== undefined && storyLength < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'storyLength must be at least 1 day',
+        });
+        return;
+      }
+      if (maxTravelersPerDay !== undefined && maxTravelersPerDay < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'maxTravelersPerDay must be at least 1',
+        });
+        return;
+      }
+    } else if (currentAvailabilityType === 'TRAVEL_WITH_STARS') {
+      // For TRAVEL_WITH_STARS, startDate, endDate, and maxTravellersScheduled should be provided or already exist
+      const finalStartDate =
+        startDate !== undefined ? startDate : existingStory.startDate;
+      const finalEndDate =
+        endDate !== undefined ? endDate : existingStory.endDate;
+      const finalMaxTravellersScheduled =
+        maxTravellersScheduled !== undefined
+          ? maxTravellersScheduled
+          : existingStory.maxTravellersScheduled;
+
+      if (!finalStartDate || !finalEndDate || !finalMaxTravellersScheduled) {
+        res.status(400).json({
+          success: false,
+          message:
+            'For TRAVEL_WITH_STARS availability, startDate, endDate, and maxTravellersScheduled are required',
+        });
+        return;
+      }
+      if (startDate !== undefined || endDate !== undefined) {
+        const start = startDate
+          ? new Date(startDate)
+          : new Date(finalStartDate);
+        const end = endDate ? new Date(endDate) : new Date(finalEndDate);
+        if (start >= end) {
+          res.status(400).json({
+            success: false,
+            message: 'startDate must be before endDate',
+          });
+          return;
+        }
+      }
+      if (maxTravellersScheduled !== undefined && maxTravellersScheduled < 1) {
+        res.status(400).json({
+          success: false,
+          message: 'maxTravellersScheduled must be at least 1',
+        });
+        return;
+      }
     }
 
     // Validate tags if provided
@@ -617,26 +782,33 @@ export const updateStory = async (
       }
     }
 
-    // Validate storyLength if provided
-    if (storyLength !== undefined && storyLength < 1) {
-      res.status(400).json({
-        success: false,
-        message: 'storyLength must be at least 1 day',
-      });
-      return;
-    }
-
     // Build update object with only provided fields
-    const updateData: Partial<IStory> = {};
+    const updateData: any = {};
     if (storyTitle !== undefined) updateData.storyTitle = storyTitle;
     if (storyDescription !== undefined)
       updateData.storyDescription = storyDescription;
     if (state !== undefined) updateData.state = state;
     if (location !== undefined) updateData.location = location;
     if (tags !== undefined) updateData.tags = tags;
+    if (availabilityType !== undefined) {
+      updateData.availabilityType = availabilityType;
+      // Reset conditional fields when changing availability type
+      if (availabilityType === 'YEAR_ROUND') {
+        updateData.startDate = undefined;
+        updateData.endDate = undefined;
+        updateData.maxTravellersScheduled = undefined;
+      } else if (availabilityType === 'TRAVEL_WITH_STARS') {
+        updateData.storyLength = undefined;
+        updateData.maxTravelersPerDay = undefined;
+      }
+    }
     if (storyLength !== undefined) updateData.storyLength = storyLength;
     if (maxTravelersPerDay !== undefined)
       updateData.maxTravelersPerDay = maxTravelersPerDay;
+    if (startDate !== undefined) updateData.startDate = startDate;
+    if (endDate !== undefined) updateData.endDate = endDate;
+    if (maxTravellersScheduled !== undefined)
+      updateData.maxTravellersScheduled = maxTravellersScheduled;
 
     const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
       new: true,

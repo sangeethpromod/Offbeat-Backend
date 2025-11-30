@@ -9,6 +9,8 @@ export type LocationType =
 
 export type PricingType = 'Per Day' | 'Per Person';
 
+export type AvailabilityType = 'YEAR_ROUND' | 'TRAVEL_WITH_STARS';
+
 export interface ImageData {
   key: string;
   url: string;
@@ -47,8 +49,14 @@ export interface IStory extends Document {
   state: string;
   location: string;
   tags: string[]; // Array of tags, min 4, max 6
-  storyLength: number; // Duration in days
-  maxTravelersPerDay: number;
+  availabilityType: AvailabilityType; // YEAR_ROUND or TRAVEL_WITH_STARS
+  // For YEAR_ROUND availability
+  storyLength?: number; // Duration in days (required for YEAR_ROUND)
+  maxTravelersPerDay?: number; // (required for YEAR_ROUND)
+  // For TRAVEL_WITH_STARS availability
+  startDate?: Date; // (required for TRAVEL_WITH_STARS)
+  endDate?: Date; // (required for TRAVEL_WITH_STARS)
+  maxTravellersScheduled?: number; // (required for TRAVEL_WITH_STARS)
   status:
     | 'DRAFT'
     | 'STEP 1 COMPLETED'
@@ -151,8 +159,18 @@ const StorySchema = new Schema<IStory>(
         message: 'Tags must contain between 4 and 6 items',
       },
     },
-    storyLength: { type: Number, required: true, min: 1 },
-    maxTravelersPerDay: { type: Number, required: true, min: 1 },
+    availabilityType: {
+      type: String,
+      enum: ['YEAR_ROUND', 'TRAVEL_WITH_STARS'],
+      required: true,
+    },
+    // For YEAR_ROUND availability
+    storyLength: { type: Number, min: 1 },
+    maxTravelersPerDay: { type: Number, min: 1 },
+    // For TRAVEL_WITH_STARS availability
+    startDate: { type: Date },
+    endDate: { type: Date },
+    maxTravellersScheduled: { type: Number, min: 1 },
     status: {
       type: String,
       enum: [

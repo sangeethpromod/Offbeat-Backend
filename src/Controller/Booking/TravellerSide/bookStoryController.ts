@@ -107,7 +107,7 @@ async function checkCapacityForDateRange(
 ): Promise<{ hasCapacity: boolean; maxCapacity: number }> {
   // Get story max capacity by storyId (UUID)
   const story = await Story.findOne({ storyId })
-    .select('maxTravelersPerDay')
+    .select('availabilityType maxTravelersPerDay maxTravellersScheduled')
     .session(session)
     .lean();
 
@@ -115,7 +115,15 @@ async function checkCapacityForDateRange(
     throw new Error('Story not found');
   }
 
-  const maxCapacity = story.maxTravelersPerDay;
+  // Get max capacity based on availability type
+  const maxCapacity =
+    story.availabilityType === 'YEAR_ROUND'
+      ? story.maxTravelersPerDay
+      : story.maxTravellersScheduled;
+
+  if (!maxCapacity) {
+    throw new Error('Story capacity not defined');
+  }
 
   // Check each date in the range
   for (
