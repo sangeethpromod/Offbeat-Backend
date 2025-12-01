@@ -24,10 +24,12 @@ const PORT: number = parseInt(process.env.PORT || '8080', 10);
 database.connect();
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:8081',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

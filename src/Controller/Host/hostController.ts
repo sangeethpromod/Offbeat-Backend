@@ -5,6 +5,7 @@ import AuthUser from '../../Model/authModel';
 import HostProfile from '../../Model/hostModel';
 import Role from '../../Model/roleModel';
 import s3Service from '../../Service/s3Service';
+import { generateOTP, sendOTPEmail, validateOTP } from '../../Utils/otpHelper';
 import {
   RegisterHostStep1Request,
   RegisterHostStep2Request,
@@ -14,7 +15,7 @@ import {
 } from '../../Types';
 
 /**
- * Host Registration Step 1: Create AuthUser and HostProfile with basic info
+ * Host Registration Step 1: Create AuthUser and HostProfile with basic info and send OTP
  */
 export const registerHostStep1 = async (
   req: Request<{}, ApiResponse<HostStepResponse>, RegisterHostStep1Request>,
@@ -75,28 +76,48 @@ export const registerHostStep1 = async (
 
     const savedUser = await newUser.save();
 
-    // Create HostProfile
+    // Generate OTP
+    const otp = generateOTP();
+    const otpTimestamp = Date.now();
+
+    // Create HostProfile with OTP
     const newHostProfile = new HostProfile({
       userId: savedUser.userId,
       age,
       gender,
       mobileNumber,
       nationality,
+      otp,
+      otpTimestamp,
+      isEmailVerified: false,
       onboardingStep: 1,
       isOnboardingComplete: false,
     });
 
     const savedHostProfile = await newHostProfile.save();
 
+    // Send OTP email
+    const emailSent = await sendOTPEmail(email, fullName, otp);
+
+    if (!emailSent) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP email. Please try again.',
+      });
+      return;
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Host registration step 1 completed successfully',
+      message:
+        'Host registration step 1 completed successfully. OTP sent to email.',
       data: {
         hostId: savedHostProfile.hostId,
         userId: savedUser.userId,
         onboardingStep: 1,
         isOnboardingComplete: false,
-        message: 'Please proceed to step 2 to set your password',
+        message:
+          'Please verify your email with the OTP sent to your email address',
       },
     });
   } catch (error) {
@@ -109,25 +130,25 @@ export const registerHostStep1 = async (
 };
 
 /**
- * Host Registration Step 2: Set password
+ * Host Registration Step 2: Verify OTP and set password
  */
 export const registerHostStep2 = async (
   req: Request<
     { userId: string },
     ApiResponse<HostStepResponse>,
-    RegisterHostStep2Request
+    RegisterHostStep2Request & { otp: string }
   >,
   res: Response<ApiResponse<HostStepResponse>>
 ): Promise<void> => {
   try {
     const { userId } = req.params;
-    const { password } = req.body;
+    const { password, otp } = req.body;
 
     // Validate required fields
-    if (!password) {
+    if (!password || !otp) {
       res.status(400).json({
         success: false,
-        message: 'Password is required',
+        message: 'Password and OTP are required',
       });
       return;
     }
@@ -161,27 +182,48 @@ export const registerHostStep2 = async (
       return;
     }
 
+    // Validate OTP
+    const isOTPValid = validateOTP(
+      hostProfile.otp!,
+      hostProfile.otpTimestamp!,
+      otp
+    );
+
+    if (!isOTPValid) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP. Please request a new OTP.',
+      });
+      return;
+    }
+
     // Hash password
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Update user with password
+    // Update user with password and mark email as verified
     await AuthUser.findOneAndUpdate(
       { userId },
       { password: hashedPassword },
       { new: true }
     );
 
-    // Update host profile step
+    // Update host profile step and mark email as verified
     const updatedHostProfile = await HostProfile.findOneAndUpdate(
       { userId },
-      { onboardingStep: 2 },
+      {
+        onboardingStep: 2,
+        isEmailVerified: true,
+        otp: null,
+        otpTimestamp: null,
+      },
       { new: true }
     );
 
     res.status(200).json({
       success: true,
-      message: 'Host registration step 2 completed successfully',
+      message:
+        'Host registration step 2 completed successfully. Email verified.',
       data: {
         hostId: updatedHostProfile!.hostId,
         userId: user.userId,
@@ -215,7 +257,7 @@ export const registerHostStep3 = async (
     const { location, aadharNumber } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     console.log(req.files, req.body);
-    
+
     // Validate required fields
     if (!location || !aadharNumber) {
       res.status(400).json({

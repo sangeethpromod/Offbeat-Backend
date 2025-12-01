@@ -36,6 +36,9 @@ export interface IHostProfile extends Document {
   aadharDocs?: string[]; // Array of S3 URLs
   pccCertificateUrl?: string; // S3 URL
   livePicUrl?: string; // S3 URL
+  otp?: string | null; // OTP for email verification
+  otpTimestamp?: number | null; // Timestamp when OTP was sent
+  isEmailVerified?: boolean; // Flag to track email verification
   onboardingStep: 1 | 2 | 3;
   isOnboardingComplete: boolean;
   createdAt: Date;

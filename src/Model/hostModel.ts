@@ -4,7 +4,7 @@ import { IHostProfile } from '../Types';
 
 /**
  * HostProfile Schema for MongoDB
- * 
+ *
  * This schema defines host-specific profile data and tracks the multi-step onboarding process.
  * It stores additional information required only for hosts, including document URLs and onboarding progress.
  */
@@ -54,6 +54,18 @@ const HostProfileSchema: Schema = new Schema(
     livePicUrl: {
       type: String, // S3 URL
     },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpTimestamp: {
+      type: Number,
+      default: null,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     onboardingStep: {
       type: Number,
       enum: [1, 2, 3],
@@ -75,7 +87,7 @@ HostProfileSchema.index({ userId: 1 });
 
 /**
  * HostProfile Model
- * 
+ *
  * Mongoose model for host-specific profile data and onboarding tracking. This model handles:
  * - Host personal information (age, gender, nationality, etc.)
  * - Document storage (Aadhar, PCC certificate, live picture) via S3 URLs
