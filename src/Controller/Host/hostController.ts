@@ -334,6 +334,7 @@ export const registerHostStep3 = async (
           livePicUrl,
           onboardingStep: 3,
           isOnboardingComplete: true,
+          status: 'PENDING', // Set status to PENDING after completing step 3
         },
         { new: true }
       );

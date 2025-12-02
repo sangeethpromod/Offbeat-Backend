@@ -41,6 +41,8 @@ export interface IHostProfile extends Document {
   isEmailVerified?: boolean; // Flag to track email verification
   onboardingStep: 1 | 2 | 3;
   isOnboardingComplete: boolean;
+  status: 'PENDING' | 'APPROVED' | 'BLOCKED';
+  blockReason?: string | null; // Reason for blocking the host
   createdAt: Date;
   updatedAt: Date;
 }

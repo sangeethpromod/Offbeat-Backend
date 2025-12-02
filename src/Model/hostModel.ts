@@ -75,6 +75,16 @@ const HostProfileSchema: Schema = new Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ['PENDING', 'APPROVED', 'BLOCKED'],
+      default: 'PENDING',
+    },
+    blockReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -1,0 +1,235 @@
+import { Request, Response } from 'express';
+import HostProfile from '../../Model/hostModel';
+
+interface ApproveHostRequest {
+  hostId: string;
+}
+
+interface BlockHostRequest {
+  hostId: string;
+  blockReason: string;
+}
+
+interface UnblockHostRequest {
+  hostId: string;
+}
+
+/**
+ * Approve a host - Change status from PENDING to APPROVED
+ */
+export const approveHost = async (
+  req: Request<{}, {}, ApproveHostRequest>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hostId } = req.body;
+
+    if (!hostId) {
+      res.status(400).json({
+        success: false,
+        message: 'hostId is required',
+      });
+      return;
+    }
+
+    // Find the host profile
+    const hostProfile = await HostProfile.findOne({ hostId });
+
+    if (!hostProfile) {
+      res.status(404).json({
+        success: false,
+        message: 'Host not found',
+      });
+      return;
+    }
+
+    // Check if host is already approved
+    if (hostProfile.status === 'APPROVED') {
+      res.status(400).json({
+        success: false,
+        message: 'Host is already approved',
+      });
+      return;
+    }
+
+    // Check if host is blocked
+    if (hostProfile.status === 'BLOCKED') {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot approve a blocked host. Please unblock first.',
+      });
+      return;
+    }
+
+    // Update status to APPROVED
+    hostProfile.status = 'APPROVED';
+    await hostProfile.save();
+
+    console.log(`Host ${hostId} approved by admin`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Host approved successfully',
+      data: {
+        hostId: hostProfile.hostId,
+        userId: hostProfile.userId,
+        status: hostProfile.status,
+        approvedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error approving host:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to approve host',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Block a host - Change status to BLOCKED with a reason
+ */
+export const blockHost = async (
+  req: Request<{}, {}, BlockHostRequest>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hostId, blockReason } = req.body;
+
+    if (!hostId) {
+      res.status(400).json({
+        success: false,
+        message: 'hostId is required',
+      });
+      return;
+    }
+
+    if (!blockReason || blockReason.trim().length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'blockReason is required',
+      });
+      return;
+    }
+
+    // Find the host profile
+    const hostProfile = await HostProfile.findOne({ hostId });
+
+    if (!hostProfile) {
+      res.status(404).json({
+        success: false,
+        message: 'Host not found',
+      });
+      return;
+    }
+
+    // Check if host is already blocked
+    if (hostProfile.status === 'BLOCKED') {
+      res.status(400).json({
+        success: false,
+        message: 'Host is already blocked',
+        data: {
+          blockReason: hostProfile.blockReason,
+        },
+      });
+      return;
+    }
+
+    // Update status to BLOCKED and save reason
+    hostProfile.status = 'BLOCKED';
+    hostProfile.blockReason = blockReason.trim();
+    await hostProfile.save();
+
+    console.log(`Host ${hostId} blocked by admin. Reason: ${blockReason}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Host blocked successfully',
+      data: {
+        hostId: hostProfile.hostId,
+        userId: hostProfile.userId,
+        status: hostProfile.status,
+        blockReason: hostProfile.blockReason,
+        blockedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error blocking host:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to block host',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Unblock a host - Change status from BLOCKED back to PENDING
+ */
+export const unblockHost = async (
+  req: Request<{}, {}, UnblockHostRequest>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hostId } = req.body;
+
+    if (!hostId) {
+      res.status(400).json({
+        success: false,
+        message: 'hostId is required',
+      });
+      return;
+    }
+
+    // Find the host profile
+    const hostProfile = await HostProfile.findOne({ hostId });
+
+    if (!hostProfile) {
+      res.status(404).json({
+        success: false,
+        message: 'Host not found',
+      });
+      return;
+    }
+
+    // Check if host is actually blocked
+    if (hostProfile.status !== 'BLOCKED') {
+      res.status(400).json({
+        success: false,
+        message: 'Host is not blocked',
+        data: {
+          currentStatus: hostProfile.status,
+        },
+      });
+      return;
+    }
+
+    // Update status to PENDING and clear block reason
+    const previousBlockReason = hostProfile.blockReason;
+    hostProfile.status = 'APPROVED';
+    hostProfile.blockReason = null;
+    await hostProfile.save();
+
+    console.log(`Host ${hostId} unblocked by admin`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Host unblocked successfully',
+      data: {
+        hostId: hostProfile.hostId,
+        userId: hostProfile.userId,
+        status: hostProfile.status,
+        previousBlockReason,
+        unblockedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error unblocking host:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unblock host',
+      error: error.message,
+    });
+  }
+};
