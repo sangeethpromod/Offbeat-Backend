@@ -1,6 +1,5 @@
 # Booking Search Architecture Diagram
 
-```mermaid
 graph TD;
     A[Frontend Search Request]\n    -->|POST /api/bookings/search\n    with { place, startDate, totalPeople }| B[SearchStories Controller];
 
