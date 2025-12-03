@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import { getHostList } from '../Controller/Admin/hostKPIController';
+import { getTravellerList } from '../Controller/Admin/travellerKPIController';
+import {
+  blockTraveller,
+  unblockTraveller,
+} from '../Controller/Admin/travellerApprovalController';
 import {
   approveHost,
   blockHost,
   unblockHost,
-} from '../Controller/Admin/approvalController';
+  rejectHost,
+} from '../Controller/Admin/hostApprovalController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdmin } from '../Middleware/roleAuth';
 
@@ -22,10 +28,11 @@ adminRoutes.use(verifyAccessToken, requireAdmin);
 // 📊 HOST LISTING & KPI ROUTES
 // -----------------------------------------------------
 
-
 // Retrieves paginated host list with filters & sorting.
-// -------------------------------------------------------
 adminRoutes.post('/hosts', getHostList);
+
+// Retrieves paginated traveller list with filters & sorting.
+adminRoutes.post('/travellers', getTravellerList);
 
 // -------------------------------------------------------
 // ✅ HOST APPROVAL WORKFLOW
@@ -43,5 +50,21 @@ adminRoutes.patch('/hosts/block', blockHost);
 
 // Action: Move host from BLOCKED → PENDING
 adminRoutes.patch('/hosts/unblock', unblockHost);
+
+// Action: Reject a host + record reason (only from PENDING)
+adminRoutes.patch('/hosts/reject', rejectHost);
+
+// -------------------------------------------------------
+// 🚫 TRAVELLER MANAGEMENT
+// -------------------------------------------------------
+// Routes for managing traveller accounts:
+// Block → Unblock
+// -------------------------------------------------------
+
+// Action: Block a traveller + record reason
+adminRoutes.patch('/travellers/block', blockTraveller);
+
+// Action: Unblock a traveller
+adminRoutes.patch('/travellers/unblock', unblockTraveller);
 
 export default adminRoutes;

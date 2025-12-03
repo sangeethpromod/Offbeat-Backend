@@ -50,6 +50,11 @@ const AuthUserSchema: Schema = new Schema(
       sparse: true, // Allows multiple null values but enforces uniqueness for non-null values
       unique: true,
     },
+    blockReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,

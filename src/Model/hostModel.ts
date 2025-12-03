@@ -77,10 +77,15 @@ const HostProfileSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'BLOCKED'],
+      enum: ['PENDING', 'APPROVED', 'BLOCKED', 'REJECTED'],
       default: 'PENDING',
     },
     blockReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    rejectReason: {
       type: String,
       trim: true,
       default: null,

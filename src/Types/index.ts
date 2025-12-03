@@ -19,6 +19,7 @@ export interface IAuthUser extends Document {
   role: string;
   isActive: boolean;
   firebaseUid?: string; // Firebase User ID
+  blockReason?: string | null; // Reason for blocking the user
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,8 +42,9 @@ export interface IHostProfile extends Document {
   isEmailVerified?: boolean; // Flag to track email verification
   onboardingStep: 1 | 2 | 3;
   isOnboardingComplete: boolean;
-  status: 'PENDING' | 'APPROVED' | 'BLOCKED';
+  status: 'PENDING' | 'APPROVED' | 'BLOCKED' | 'REJECTED';
   blockReason?: string | null; // Reason for blocking the host
+  rejectReason?: string | null; // Reason for rejecting the host
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import AuthUser from '../../Model/authModel';
 
-interface HostListRequest {
+interface TravellerListRequest {
   page?: number;
   limit?: number;
   sort?: 'A-Z' | 'Z-A' | 'DateJoined';
-  status?: 'ALL' | 'ACTIVE' | 'PENDING' | 'BLOCKED';
+  status?: 'ALL' | 'ACTIVE' | 'BLOCKED';
 }
 
-export const getHostList = async (
-  req: Request<{}, {}, HostListRequest>,
+export const getTravellerList = async (
+  req: Request<{}, {}, TravellerListRequest>,
   res: Response
 ): Promise<void> => {
   try {
@@ -20,31 +20,15 @@ export const getHostList = async (
 
     // Build aggregation pipeline
     const pipeline: any[] = [
-      // 1. Match only users with role 'host'
-      { $match: { role: 'host' } },
+      // 1. Match only users with role 'traveller'
+      { $match: { role: 'traveller' } },
 
-      // 2. Lookup HostProfile to get host details
-      {
-        $lookup: {
-          from: 'hostprofiles', // collection name is lowercase plural
-          localField: 'userId',
-          foreignField: 'userId',
-          as: 'profile',
-        },
-      },
+      // 2. Filter by status if not ALL
+      ...(status !== 'ALL'
+        ? [{ $match: { isActive: status === 'ACTIVE' } }]
+        : []),
 
-      // 3. Unwind profile - DO NOT preserve null/empty arrays (only include hosts with profiles)
-      {
-        $unwind: {
-          path: '$profile',
-          preserveNullAndEmptyArrays: false, // This ensures we only get hosts with profiles
-        },
-      },
-
-      // 4. Filter by status if not ALL
-      ...(status !== 'ALL' ? [{ $match: { 'profile.status': status } }] : []),
-
-      // 5. Sort
+      // 3. Sort
       {
         $sort:
           sort === 'A-Z'
@@ -54,7 +38,7 @@ export const getHostList = async (
               : { createdAt: -1 }, // Default to DateJoined (newest first)
       },
 
-      // 6. Facet for pagination and data
+      // 4. Facet for pagination and data
       {
         $facet: {
           metadata: [{ $count: 'total' }],
@@ -64,16 +48,18 @@ export const getHostList = async (
             {
               $project: {
                 _id: 0,
-                hostID: '$profile.hostId',
-                userID: '$userId',
+                userId: '$userId',
                 fullName: '$fullName',
-                emailID: '$email',
-                mobileNumber: '$profile.mobileNumber',
-                nationality: '$profile.nationality',
+                email: '$email',
                 dateJoined: '$createdAt',
-                status: '$profile.status',
-                blockReason: '$profile.blockReason',
-                rejectReason: '$profile.rejectReason',
+                status: {
+                  $cond: {
+                    if: '$isActive',
+                    then: 'Active',
+                    else: 'Blocked',
+                  },
+                },
+                blockReason: '$blockReason',
               },
             },
           ],
@@ -84,13 +70,13 @@ export const getHostList = async (
     const result = await AuthUser.aggregate(pipeline);
 
     const metadata = result[0].metadata[0] || { total: 0 };
-    const hosts = result[0].data;
+    const travellers = result[0].data;
 
     res.status(200).json({
       success: true,
-      message: 'Host list retrieved successfully',
+      message: 'Traveller list retrieved successfully',
       data: {
-        hosts,
+        travellers,
         pagination: {
           total: metadata.total,
           page,
@@ -100,10 +86,10 @@ export const getHostList = async (
       },
     });
   } catch (error: any) {
-    console.error('Error fetching host list:', error);
+    console.error('Error fetching traveller list:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch host list',
+      message: 'Failed to fetch traveller list',
       error: error.message,
     });
   }

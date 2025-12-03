@@ -14,6 +14,11 @@ interface UnblockHostRequest {
   hostId: string;
 }
 
+interface RejectHostRequest {
+  hostId: string;
+  rejectReason: string;
+}
+
 /**
  * Approve a host - Change status from PENDING to APPROVED
  */
@@ -229,6 +234,83 @@ export const unblockHost = async (
     res.status(500).json({
       success: false,
       message: 'Failed to unblock host',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Reject a host - Change status from PENDING to REJECTED with a reason
+ */
+export const rejectHost = async (
+  req: Request<{}, {}, RejectHostRequest>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hostId, rejectReason } = req.body;
+
+    if (!hostId) {
+      res.status(400).json({
+        success: false,
+        message: 'hostId is required',
+      });
+      return;
+    }
+
+    if (!rejectReason || rejectReason.trim().length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'rejectReason is required',
+      });
+      return;
+    }
+
+    // Find the host profile
+    const hostProfile = await HostProfile.findOne({ hostId });
+
+    if (!hostProfile) {
+      res.status(404).json({
+        success: false,
+        message: 'Host not found',
+      });
+      return;
+    }
+
+    // Check if host is in PENDING state
+    if (hostProfile.status !== 'PENDING') {
+      res.status(400).json({
+        success: false,
+        message: 'Host can only be rejected if in PENDING state',
+        data: {
+          currentStatus: hostProfile.status,
+        },
+      });
+      return;
+    }
+
+    // Update status to REJECTED and save reason
+    hostProfile.status = 'REJECTED';
+    hostProfile.rejectReason = rejectReason.trim();
+    await hostProfile.save();
+
+    console.log(`Host ${hostId} rejected by admin. Reason: ${rejectReason}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Host rejected successfully',
+      data: {
+        hostId: hostProfile.hostId,
+        userId: hostProfile.userId,
+        status: hostProfile.status,
+        rejectReason: hostProfile.rejectReason,
+        rejectedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error rejecting host:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reject host',
       error: error.message,
     });
   }
