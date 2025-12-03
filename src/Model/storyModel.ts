@@ -65,8 +65,10 @@ export interface IStory extends Document {
     | 'STEP 4 COMPLETED'
     | 'STEP 5 COMPLETED'
     | 'PUBLISHED'
-    | 'APPROVED';
+    | 'APPROVED'
+    | 'BLOCKED';
   createdBy: string; // Added: User ID of the creator
+  blockReason?: string | null; // Reason for blocking the story
   // Step 2
   locationType?: LocationType;
   pickupLocation?: string;
@@ -182,11 +184,13 @@ const StorySchema = new Schema<IStory>(
         'STEP 5 COMPLETED',
         'PUBLISHED',
         'APPROVED',
+        'BLOCKED',
       ],
       default: 'DRAFT',
       required: true,
     },
     createdBy: { type: String, required: true, trim: true }, // Added: User ID of the creator
+    blockReason: { type: String, trim: true, default: null },
     // Step 2
     locationType: {
       type: String,

@@ -11,6 +11,10 @@ import {
   unblockHost,
   rejectHost,
 } from '../Controller/Admin/hostApprovalController';
+import {
+  blockStory,
+  unblockStory,
+} from '../Controller/Admin/storyApprovalController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdmin } from '../Middleware/roleAuth';
 
@@ -55,7 +59,7 @@ adminRoutes.patch('/hosts/unblock', unblockHost);
 adminRoutes.patch('/hosts/reject', rejectHost);
 
 // -------------------------------------------------------
-// 🚫 TRAVELLER MANAGEMENT
+//  TRAVELLER MANAGEMENT
 // -------------------------------------------------------
 // Routes for managing traveller accounts:
 // Block → Unblock
@@ -66,5 +70,18 @@ adminRoutes.patch('/travellers/block', blockTraveller);
 
 // Action: Unblock a traveller
 adminRoutes.patch('/travellers/unblock', unblockTraveller);
+
+// -------------------------------------------------------
+// 📖 STORY MANAGEMENT
+// -------------------------------------------------------
+// Routes for managing stories:
+// Block → Unblock
+// -------------------------------------------------------
+
+// Action: Block a story + record reason
+adminRoutes.patch('/stories/block', blockStory);
+
+// Action: Unblock a story (returns to APPROVED)
+adminRoutes.patch('/stories/unblock', unblockStory);
 
 export default adminRoutes;
