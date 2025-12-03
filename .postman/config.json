@@ -1,0 +1,16 @@
+{
+  "workspace": {
+    "id": "acc4b146-1260-47c8-84f1-bf44118f0e26"
+  },
+  "entities": {
+    "collections": [
+      "..\\postman\\collections\\Offbeat API's.postman_collection.json"
+    ],
+    "environments": [
+      "..\\postman\\environments\\Offbeat ENV.postman_environment.json"
+    ],
+    "specs": [],
+    "flows": [],
+    "globals": []
+  }
+}

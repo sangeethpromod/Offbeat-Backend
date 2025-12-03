@@ -45,7 +45,8 @@ export const createStory = async (
       startDate,
       endDate,
       maxTravellersScheduled,
-    } = req.body as Partial<IStory>;
+      nominatimData,
+    } = req.body as Partial<IStory> & { nominatimData?: any };
 
     // Validate required base fields
     if (
@@ -63,6 +64,63 @@ export const createStory = async (
       });
       return;
     }
+
+    // Validate location data from Nominatim
+    if (!nominatimData) {
+      res.status(400).json({
+        success: false,
+        message: 'Location data (nominatimData) is required',
+      });
+      return;
+    }
+
+    // Validate lat/lon
+    const lat = Number(nominatimData.lat);
+    const lon = Number(nominatimData.lon);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid latitude or longitude in location data',
+      });
+      return;
+    }
+
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      res.status(400).json({
+        success: false,
+        message:
+          'Latitude must be between -90 and 90, longitude between -180 and 180',
+      });
+      return;
+    }
+
+    // Parse geolocation data from Nominatim
+    const locationDetails = {
+      lat,
+      lon,
+      geoPoint: {
+        type: 'Point' as const,
+        coordinates: [lon, lat] as [number, number], // GeoJSON format: [longitude, latitude]
+      },
+      displayName: nominatimData.display_name,
+      name: nominatimData.name,
+      state: nominatimData.address?.state,
+      district: nominatimData.address?.state_district,
+      town: nominatimData.address?.town,
+      suburb: nominatimData.address?.suburb,
+      postcode: nominatimData.address?.postcode,
+      country: nominatimData.address?.country,
+      countryCode: nominatimData.address?.country_code,
+      boundingBox: nominatimData.boundingbox
+        ? ([
+            Number(nominatimData.boundingbox[0]),
+            Number(nominatimData.boundingbox[1]),
+            Number(nominatimData.boundingbox[2]),
+            Number(nominatimData.boundingbox[3]),
+          ] as [number, number, number, number])
+        : undefined,
+    };
 
     // Validate availabilityType
     if (
@@ -151,6 +209,7 @@ export const createStory = async (
       storyDescription,
       state,
       location,
+      locationDetails, // Add full geolocation data
       tags,
       availabilityType,
       status: 'STEP 1 COMPLETED',
@@ -359,21 +418,40 @@ export const updateStoryImages = async (
 
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
+    // Check if any files were uploaded
+    if (!files || Object.keys(files).length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'No files uploaded. Please upload at least one image.',
+      });
+      return;
+    }
+
     const storyImages: StoryImages = {};
+    const uploadPromises: Promise<void>[] = [];
 
     // Upload banner image
     if (files.bannerImage && files.bannerImage.length > 0) {
       const bannerFile = files.bannerImage[0];
       if (bannerFile) {
-        const bannerUrl = await s3Service.uploadFile(
-          bannerFile,
-          `stories/${id}/banner`
+        uploadPromises.push(
+          (async () => {
+            try {
+              const bannerUrl = await s3Service.uploadFile(
+                bannerFile,
+                `stories/${id}/banner`
+              );
+              const bannerKey = bannerUrl.split('/').slice(3).join('/');
+              storyImages.bannerImage = {
+                key: bannerKey,
+                url: bannerUrl,
+              };
+            } catch (error) {
+              console.error('Error uploading banner image:', error);
+              throw error;
+            }
+          })()
         );
-        const bannerKey = bannerUrl.split('/').slice(3).join('/');
-        storyImages.bannerImage = {
-          key: bannerKey,
-          url: bannerUrl,
-        };
       }
     }
 
@@ -381,36 +459,61 @@ export const updateStoryImages = async (
     if (files.storyImage && files.storyImage.length > 0) {
       const storyFile = files.storyImage[0];
       if (storyFile) {
-        const storyUrl = await s3Service.uploadFile(
-          storyFile,
-          `stories/${id}/main`
+        uploadPromises.push(
+          (async () => {
+            try {
+              const storyUrl = await s3Service.uploadFile(
+                storyFile,
+                `stories/${id}/main`
+              );
+              const storyKey = storyUrl.split('/').slice(3).join('/');
+              storyImages.storyImage = {
+                key: storyKey,
+                url: storyUrl,
+              };
+            } catch (error) {
+              console.error('Error uploading story image:', error);
+              throw error;
+            }
+          })()
         );
-        const storyKey = storyUrl.split('/').slice(3).join('/');
-        storyImages.storyImage = {
-          key: storyKey,
-          url: storyUrl,
-        };
       }
     }
 
     // Upload other images
     if (files.otherImages && files.otherImages.length > 0) {
-      const otherImages: ImageData[] = [];
-      for (const file of files.otherImages) {
+      const otherImagesPromises = files.otherImages.map(async (file, index) => {
         if (file) {
-          const otherUrl = await s3Service.uploadFile(
-            file,
-            `stories/${id}/others`
-          );
-          const otherKey = otherUrl.split('/').slice(3).join('/');
-          otherImages.push({
-            key: otherKey,
-            url: otherUrl,
-          });
+          try {
+            const otherUrl = await s3Service.uploadFile(
+              file,
+              `stories/${id}/others`
+            );
+            const otherKey = otherUrl.split('/').slice(3).join('/');
+            return {
+              key: otherKey,
+              url: otherUrl,
+            };
+          } catch (error) {
+            console.error(`Error uploading other image ${index + 1}:`, error);
+            throw error;
+          }
         }
-      }
-      storyImages.otherImages = otherImages;
+        return null;
+      });
+
+      uploadPromises.push(
+        (async () => {
+          const uploadedOtherImages = await Promise.all(otherImagesPromises);
+          storyImages.otherImages = uploadedOtherImages.filter(
+            img => img !== null
+          ) as ImageData[];
+        })()
+      );
     }
+
+    // Wait for all uploads to complete
+    await Promise.all(uploadPromises);
 
     // Update the story with the new images
     const updated = await Story.findOneAndUpdate(
@@ -423,7 +526,6 @@ export const updateStoryImages = async (
       res.status(404).json({ success: false, message: 'Story not found' });
       return;
     }
-
     res.status(200).json({
       success: true,
       message: 'Story images updated',
@@ -653,7 +755,8 @@ export const updateStory = async (
       startDate,
       endDate,
       maxTravellersScheduled,
-    } = req.body as Partial<IStory>;
+      nominatimData,
+    } = req.body as Partial<IStory> & { nominatimData?: any };
 
     // Check if story exists and belongs to the user
     const existingStory = await Story.findOne({ storyId: id });
@@ -669,6 +772,56 @@ export const updateStory = async (
         message: 'You can only update your own stories',
       });
       return;
+    }
+
+    // Parse and validate location data if provided
+    let locationDetails;
+    if (nominatimData) {
+      const lat = Number(nominatimData.lat);
+      const lon = Number(nominatimData.lon);
+
+      if (isNaN(lat) || isNaN(lon)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid latitude or longitude in location data',
+        });
+        return;
+      }
+
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        res.status(400).json({
+          success: false,
+          message:
+            'Latitude must be between -90 and 90, longitude between -180 and 180',
+        });
+        return;
+      }
+
+      locationDetails = {
+        lat,
+        lon,
+        geoPoint: {
+          type: 'Point' as const,
+          coordinates: [lon, lat] as [number, number],
+        },
+        displayName: nominatimData.display_name,
+        name: nominatimData.name,
+        state: nominatimData.address?.state,
+        district: nominatimData.address?.state_district,
+        town: nominatimData.address?.town,
+        suburb: nominatimData.address?.suburb,
+        postcode: nominatimData.address?.postcode,
+        country: nominatimData.address?.country,
+        countryCode: nominatimData.address?.country_code,
+        boundingBox: nominatimData.boundingbox
+          ? ([
+              Number(nominatimData.boundingbox[0]),
+              Number(nominatimData.boundingbox[1]),
+              Number(nominatimData.boundingbox[2]),
+              Number(nominatimData.boundingbox[3]),
+            ] as [number, number, number, number])
+          : undefined,
+      };
     }
 
     // Determine the availabilityType to validate against
@@ -789,6 +942,8 @@ export const updateStory = async (
       updateData.storyDescription = storyDescription;
     if (state !== undefined) updateData.state = state;
     if (location !== undefined) updateData.location = location;
+    if (locationDetails !== undefined)
+      updateData.locationDetails = locationDetails; // Update geolocation if provided
     if (tags !== undefined) updateData.tags = tags;
     if (availabilityType !== undefined) {
       updateData.availabilityType = availabilityType;

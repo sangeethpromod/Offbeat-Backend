@@ -635,4 +635,290 @@
  *         description: Invalid date format
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
+ *
+ * /api/bookings/search:
+ *   post:
+ *     summary: Search for stories by location, date, and capacity (Traveller only)
+ *     description: |
+ *       Advanced geospatial search API that finds stories within a 20km radius of the specified location.
+ *
+ *       **Search Algorithm:**
+ *       1. Uses MongoDB $near geospatial query for location-based search
+ *       2. Filters by availability (date range and capacity)
+ *       3. Calculates relevance score based on multiple factors
+ *       4. Returns sorted results by relevance
+ *
+ *       **Scoring System:**
+ *       - Text Match (name/suburb/town): +100 per match
+ *       - District Match: +30
+ *       - State Match: +20
+ *       - Tag Overlap: +10 per matching tag
+ *       - Distance Score: 100 - (distance_km × 5)
+ *       - Availability Bonus: +25 if dates fit
+ *       - Capacity Bonus: +15 if 20% extra capacity available
+ *
+ *       **Availability Rules:**
+ *       - YEAR_ROUND: maxTravelersPerDay >= totalPeople
+ *       - TRAVEL_WITH_STARS: startDate within range AND maxTravellersScheduled >= totalPeople
+ *
+ *       **Use Case:** Traveller search and discovery, location-based filtering
+ *     tags: [Booking - Traveller]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - place
+ *               - startDate
+ *               - totalPeople
+ *             properties:
+ *               place:
+ *                 type: object
+ *                 required:
+ *                   - lat
+ *                   - lon
+ *                 properties:
+ *                   lat:
+ *                     type: number
+ *                     minimum: -90
+ *                     maximum: 90
+ *                     example: 12.9716
+ *                     description: Latitude of search location
+ *                   lon:
+ *                     type: number
+ *                     minimum: -180
+ *                     maximum: 180
+ *                     example: 77.5946
+ *                     description: Longitude of search location
+ *                   state:
+ *                     type: string
+ *                     example: "Karnataka"
+ *                     description: Optional state name for scoring
+ *                   district:
+ *                     type: string
+ *                     example: "Bengaluru Urban"
+ *                     description: Optional district name for scoring
+ *                   name:
+ *                     type: string
+ *                     example: "Bangalore"
+ *                     description: Optional city/place name for scoring
+ *                   suburb:
+ *                     type: string
+ *                     example: "Koramangala"
+ *                     description: Optional suburb name for scoring
+ *                   town:
+ *                     type: string
+ *                     example: "Bangalore"
+ *                     description: Optional town name for scoring
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2025-12-15T00:00:00Z"
+ *                 description: Desired start date for the story (ISO 8601 format)
+ *               totalPeople:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 4
+ *                 description: Total number of people (adults + children)
+ *               filters:
+ *                 type: object
+ *                 properties:
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["adventure", "hiking", "camping", "wildlife"]
+ *                     description: Filter by story tags
+ *                   availabilityType:
+ *                     type: string
+ *                     enum: [YEAR_ROUND, TRAVEL_WITH_STARS]
+ *                     example: "YEAR_ROUND"
+ *                     description: Filter by availability type
+ *               limit:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 100
+ *                 default: 20
+ *                 example: 20
+ *                 description: Maximum number of results to return
+ *           examples:
+ *             basicSearch:
+ *               summary: Basic location search
+ *               value:
+ *                 place:
+ *                   lat: 12.9716
+ *                   lon: 77.5946
+ *                   name: "Bangalore"
+ *                   state: "Karnataka"
+ *                 startDate: "2025-12-15T00:00:00Z"
+ *                 totalPeople: 4
+ *             advancedSearch:
+ *               summary: Advanced search with filters
+ *               value:
+ *                 place:
+ *                   lat: 15.3173
+ *                   lon: 75.7139
+ *                   name: "Hampi"
+ *                   district: "Vijayanagara"
+ *                   state: "Karnataka"
+ *                   town: "Hampi"
+ *                 startDate: "2025-12-20T00:00:00Z"
+ *                 totalPeople: 2
+ *                 filters:
+ *                   tags: ["heritage", "history", "photography"]
+ *                   availabilityType: "YEAR_ROUND"
+ *                 limit: 10
+ *             groupSearch:
+ *               summary: Large group search
+ *               value:
+ *                 place:
+ *                   lat: 11.2588
+ *                   lon: 75.7804
+ *                   name: "Kozhikode"
+ *                   state: "Kerala"
+ *                 startDate: "2026-01-05T00:00:00Z"
+ *                 totalPeople: 12
+ *                 filters:
+ *                   availabilityType: "TRAVEL_WITH_STARS"
+ *     responses:
+ *       200:
+ *         description: Search results retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       storyId:
+ *                         type: string
+ *                         example: "abc123-def456-ghi789"
+ *                       storyTitle:
+ *                         type: string
+ *                         example: "Hampi Heritage Trek"
+ *                       bannerImage:
+ *                         type: object
+ *                         properties:
+ *                           key:
+ *                             type: string
+ *                             example: "stories/abc123/banner/img.jpg"
+ *                           url:
+ *                             type: string
+ *                             example: "https://bucket.s3.region.amazonaws.com/stories/abc123/banner/img.jpg"
+ *                       tags:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         example: ["heritage", "history", "photography", "culture"]
+ *                       pricingType:
+ *                         type: string
+ *                         enum: [Per Person, Per Day]
+ *                         example: "Per Person"
+ *                       amount:
+ *                         type: number
+ *                         example: 3000
+ *                       totalPrice:
+ *                         type: number
+ *                         example: 3050
+ *                       storyLength:
+ *                         type: number
+ *                         example: 3
+ *                         description: Duration in days
+ *                       finalScore:
+ *                         type: number
+ *                         example: 245
+ *                         description: Relevance score (higher = more relevant)
+ *                       isAvailable:
+ *                         type: boolean
+ *                         example: true
+ *                       priceNote:
+ *                         type: string
+ *                         example: "This price is lower than the average price in December"
+ *                       calculatedTotal:
+ *                         type: number
+ *                         example: 12000
+ *                         description: Total price for all people (amount × totalPeople for Per Person, or totalPrice for Per Day)
+ *                 total:
+ *                   type: integer
+ *                   example: 5
+ *                   description: Number of results returned
+ *             examples:
+ *               successResponse:
+ *                 summary: Successful search with multiple results
+ *                 value:
+ *                   success: true
+ *                   results:
+ *                     - storyId: "story-uuid-1"
+ *                       storyTitle: "Hampi Heritage Trek - 3 Days"
+ *                       bannerImage:
+ *                         key: "stories/story-uuid-1/banner/image.jpg"
+ *                         url: "https://bucket.s3.region.amazonaws.com/stories/story-uuid-1/banner/image.jpg"
+ *                       tags: ["heritage", "history", "photography", "culture"]
+ *                       pricingType: "Per Person"
+ *                       amount: 3000
+ *                       totalPrice: 3050
+ *                       storyLength: 3
+ *                       finalScore: 245
+ *                       isAvailable: true
+ *                       priceNote: "This price is lower than the average price in December"
+ *                       calculatedTotal: 12000
+ *                     - storyId: "story-uuid-2"
+ *                       storyTitle: "Hampi Rock Climbing Adventure"
+ *                       bannerImage:
+ *                         key: "stories/story-uuid-2/banner/image.jpg"
+ *                         url: "https://bucket.s3.region.amazonaws.com/stories/story-uuid-2/banner/image.jpg"
+ *                       tags: ["adventure", "climbing", "outdoor", "photography"]
+ *                       pricingType: "Per Day"
+ *                       amount: 2500
+ *                       totalPrice: 2550
+ *                       storyLength: 2
+ *                       finalScore: 210
+ *                       isAvailable: true
+ *                       priceNote: "This price is lower than the average price in December"
+ *                       calculatedTotal: 2550
+ *                   total: 2
+ *               emptyResults:
+ *                 summary: No stories found
+ *                 value:
+ *                   success: true
+ *                   results: []
+ *                   total: 0
+ *       400:
+ *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "totalPeople must be at least 1"
+ *       403:
+ *         description: Forbidden - Only travellers can search
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Only users with Traveller role can search stories"
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
  */

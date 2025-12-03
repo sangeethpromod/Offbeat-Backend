@@ -41,13 +41,33 @@ export interface PriceItem {
   value: number;
 }
 
+export interface GeoLocation {
+  lat: number;
+  lon: number;
+  geoPoint: {
+    type: 'Point';
+    coordinates: [number, number]; // [lon, lat]
+  };
+  displayName?: string;
+  name?: string;
+  state?: string;
+  district?: string;
+  town?: string;
+  suburb?: string;
+  postcode?: string;
+  country?: string;
+  countryCode?: string;
+  boundingBox?: [number, number, number, number]; // [lat1, lat2, lon1, lon2]
+}
+
 export interface IStory extends Document {
   storyId: string;
   // Step 1
   storyTitle: string;
   storyDescription: string;
-  state: string;
-  location: string;
+  state: string; // Kept for backward compatibility
+  location: string; // Kept for backward compatibility
+  locationDetails?: GeoLocation; // Full geolocation data from Nominatim
   tags: string[]; // Array of tags, min 4, max 6
   availabilityType: AvailabilityType; // YEAR_ROUND or TRAVEL_WITH_STARS
   // For YEAR_ROUND availability
@@ -101,6 +121,38 @@ const PriceItemSchema = new Schema<PriceItem>(
   { _id: false }
 );
 
+const GeoLocationSchema = new Schema(
+  {
+    lat: { type: Number, required: true },
+    lon: { type: Number, required: true },
+    geoPoint: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
+        index: '2dsphere',
+      },
+    },
+    displayName: { type: String },
+    name: { type: String },
+    state: { type: String },
+    district: { type: String },
+    town: { type: String },
+    suburb: { type: String },
+    postcode: { type: String },
+    country: { type: String },
+    countryCode: { type: String },
+    boundingBox: {
+      type: [Number], // [lat1, lat2, lon1, lon2]
+    },
+  },
+  { _id: false }
+);
+
 const ImageDataSchema = new Schema<ImageData>(
   {
     key: { type: String, required: true, trim: true },
@@ -149,8 +201,9 @@ const StorySchema = new Schema<IStory>(
     // Step 1
     storyTitle: { type: String, required: true, trim: true },
     storyDescription: { type: String, required: true, trim: true },
-    state: { type: String, required: true, trim: true },
-    location: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true }, // Kept for backward compatibility
+    location: { type: String, required: true, trim: true }, // Kept for backward compatibility
+    locationDetails: GeoLocationSchema, // Full geolocation data from Nominatim
     tags: {
       type: [String],
       required: true,
@@ -217,5 +270,8 @@ const StorySchema = new Schema<IStory>(
   },
   { timestamps: true }
 );
+
+// Add 2dsphere index for geospatial queries
+StorySchema.index({ 'locationDetails.geoPoint': '2dsphere' });
 
 export default mongoose.model<IStory>('Story', StorySchema);

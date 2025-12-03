@@ -60,6 +60,17 @@ class S3Service {
     folder: string = 'uploads'
   ): Promise<string> {
     try {
+      // Validate S3 configuration
+      if (!this.bucketName) {
+        throw new Error('S3 bucket name is not configured');
+      }
+      if (
+        !process.env.AWS_ACCESS_KEY_ID ||
+        !process.env.AWS_SECRET_ACCESS_KEY
+      ) {
+        throw new Error('AWS credentials are not configured');
+      }
+
       const fileExtension = file.originalname.split('.').pop();
       const fileName = `${folder}/${uuidv4()}.${fileExtension}`;
 
@@ -76,9 +87,14 @@ class S3Service {
       // Return the public URL
       const fileUrl = `https://${this.bucketName}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${fileName}`;
       return fileUrl;
-    } catch (error) {
-      console.error('Error uploading file to S3:', error);
-      throw new Error('Failed to upload file to S3');
+    } catch (error: any) {
+      console.error('Error uploading file to S3:', {
+        message: error.message,
+        code: error.Code || error.code,
+        statusCode: error.$metadata?.httpStatusCode,
+        requestId: error.$metadata?.requestId,
+      });
+      throw new Error(`Failed to upload file to S3: ${error.message}`);
     }
   }
 

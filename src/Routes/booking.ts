@@ -10,6 +10,7 @@ import {
   getTravelWithStarsAnalytics,
 } from '../Controller/Booking/HostSide/bookingAnalyticsController';
 import { getBookingDetails } from '../Controller/Booking/HostSide/bookingDetailsController';
+import { searchStories } from '../Controller/Booking/TravellerSide/searchApiController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdminOrHost } from '../Middleware/roleAuth';
 
@@ -37,6 +38,9 @@ bookingRoutes.get('/details/:bookingId', requireAdminOrHost, getBookingDetails);
 /**
  * Traveller APIs
  */
+
+// POST /api/bookings/search - Search for stories by location, date, and capacity
+bookingRoutes.post('/search', searchStories);
 
 // POST /api/bookings - Create a new booking
 bookingRoutes.post('/create-booking', validateBooking, createBooking);

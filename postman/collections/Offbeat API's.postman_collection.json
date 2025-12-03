@@ -1,0 +1,2526 @@
+{
+  "info": {
+    "_postman_id": "58e93b2d-d174-4d66-938e-75e8aa40ec6f",
+    "name": "Offbeat API's",
+    "description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Scripts\" tab**\n\nAdding tests to your requests can help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/fa30ea0a-373d-4545-a668-e7b283cca343/aW1hZ2UucG5n\" alt=\"\" height=\"1530\" width=\"2162\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n    \n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "roles",
+      "item": [
+        {
+          "name": "roles/create-role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "56c099d0-baeb-4b0e-87b8-6feb90c2bf82",
+                "exec": [
+                  "pm.test(\"Successful POST request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "592ed4de-6589-4221-966b-4e586cf374ef",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"roleName\": \"traveller\",\n\t\"roleStatus\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/create-role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "create-role"
+              ]
+            },
+            "description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+          }
+        },
+        {
+          "name": "roles/get-all-roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "9684f114-a5aa-4513-a232-e815bfb3828d",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "7d04b1cd-b3c4-4a83-abc5-16fcebfba99b",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/roles/get-all-roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "get-all-roles"
+              ]
+            },
+            "description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+          }
+        },
+        {
+          "name": "roles/update-role/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "523e4358-3113-4e02-9f7b-f4c7dff8317a",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "08adf75e-86ed-4c6e-8474-fef164591179",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"roleStatus\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/update-role/05514157-2b11-4959-bb54-651f15f9fe66",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "update-role",
+                "05514157-2b11-4959-bb54-651f15f9fe66"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "roles/get-role/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "b6d55ebb-f7f0-4fcb-bdbe-21de9001a51b",
+          "request": {
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"name\": \"Add your name in the body\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/get-role/05514157-2b11-4959-bb54-651f15f9fe66",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "get-role",
+                "05514157-2b11-4959-bb54-651f15f9fe66"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        }
+      ],
+      "id": "0b5f7bc0-38c7-474b-8f93-5463ce80bee7"
+    },
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "auth/register-user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "9d18dfdd-d95d-412f-bcee-f22e76daacd8",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "// {\n//   \"fullName\": \"Rahul\",\n//   \"email\": \"rahul@westbridgeco.com\",\n//   \"password\": \"securepassword123\",\n//   \"role\": \"traveller\"\n// }\n\n// {\n//   \"fullName\": \"Sangeeth\",\n//   \"email\": \"sangeeth@westbridgeco.com\",\n//   \"password\": \"securepassword123\",\n//   \"role\": \"admin\"\n// }\n\n{\n  \"fullName\": \"Reyvanth\",\n  \"email\": \"reyvanth@westbridgeco.com\",\n  \"password\": \"securepassword123\",\n  \"role\": \"host\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register-user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register-user"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "// Parse the response",
+                  "const response = pm.response.json();",
+                  "",
+                  "// Check if login was successful",
+                  "if (response.success && response.data) {",
+                  "    // Store tokens as environment variables",
+                  "    pm.environment.set(\"accessToken\", response.data.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", response.data.refreshToken);",
+                  "    pm.environment.set(\"firebaseToken\", response.data.firebaseToken);",
+                  "    ",
+                  "    // Store user information (optional but useful)",
+                  "    pm.environment.set(\"userId\", response.data.user.userId);",
+                  "    pm.environment.set(\"userEmail\", response.data.user.email);",
+                  "    pm.environment.set(\"userName\", response.data.user.fullName);",
+                  "    pm.environment.set(\"userRole\", response.data.user.role);",
+                  "    pm.environment.set(\"firebaseUid\", response.data.user.firebaseUid);",
+                  "    ",
+                  "    console.log(\"✅ Tokens saved to environment variables\");",
+                  "} else {",
+                  "    console.log(\"❌ Login failed - tokens not saved\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "d7abcde5-d3b2-4c56-ae8a-522314c1cc8d",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reyvanth@westbridgeco.com\",\n  \"password\": \"securepassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "host/register-step1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "1e4bdd37-ba96-4d93-8133-15fe02416ec5",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Rahul\",\n  \"email\": \"msrahul6111@gmail.com\",\n  \"age\": 21,\n  \"gender\": \"Male\",\n  \"mobileNumber\": \"+1234567890\",\n  \"nationality\": \"American\",\n  \"role\": \"host\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/host/register-step1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "host",
+                "register-step1"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "host/register-step2/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "7ccea129-471b-4683-9a5e-3e2ea270098c",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"securepassword123\",\n  \"otp\":\"586380\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/host/register-step2/e8e9cc8f-1206-47bd-9ee3-39c6caa671aa",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "host",
+                "register-step2",
+                "e8e9cc8f-1206-47bd-9ee3-39c6caa671aa"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "host/register-step3/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "4d42ab14-f016-4daa-9b5c-bc2eea67a44d",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "location",
+                  "value": "\"New York, USA",
+                  "type": "text"
+                },
+                {
+                  "key": "aadharNumber",
+                  "value": "123456789012",
+                  "type": "text"
+                },
+                {
+                  "key": "aadharFile",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/diagram-export-10-26-2025-10_51_24-PM.png"
+                },
+                {
+                  "key": "pccCertificateFile",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/Westbridge.png"
+                },
+                {
+                  "key": "livePicFile",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/1-bill-ackman-headshot-peter-hurley-photography.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/host/register-step3/a154803c-eb50-4fc8-bfe7-acca49edfd07",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "host",
+                "register-step3",
+                "a154803c-eb50-4fc8-bfe7-acca49edfd07"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "host/status/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "305d66e2-72b0-43b1-8741-b8a511be7df7",
+                "exec": [
+                  "pm.test(\"Successful PUT request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "7cdbeb1c-93bd-468e-b955-d37cae9e284a",
+          "request": {
+            "method": "GET",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "location",
+                  "value": "\"New York, USA",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "aadharNumber",
+                  "value": "123456789012",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "aadharFile",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/diagram-export-10-26-2025-10_51_24-PM.png",
+                  "disabled": true
+                },
+                {
+                  "key": "pccCertificateFile",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/Westbridge.png",
+                  "disabled": true
+                },
+                {
+                  "key": "livePicFile",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/1-bill-ackman-headshot-peter-hurley-photography.jpg",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/host/status/1f6da4b5-7b97-4ddf-ab0b-216150c74af5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "host",
+                "status",
+                "1f6da4b5-7b97-4ddf-ab0b-216150c74af5"
+              ]
+            },
+            "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+          }
+        },
+        {
+          "name": "firebase/signin",
+          "id": "7cc49468-be89-451a-a462-ca7490f09c5b",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"testuser@gmail.com\",\r\n  \"password\": \"Password@123\",\r\n  \"returnSecureToken\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAtu-wFLIvdjrNdcxJRSTelu8U5bSBBw-o\n",
+              "protocol": "https",
+              "host": [
+                "identitytoolkit",
+                "googleapis",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "accounts:signInWithPassword"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "AIzaSyAtu-wFLIvdjrNdcxJRSTelu8U5bSBBw-o\n"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "firebase/signup",
+          "id": "0b25fd7b-d99c-4ea8-93d2-17d7f8d5a2b2",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"sangeethpromod@firebase.com\",\r\n  \"password\": \"Password@123\",\r\n  \"returnSecureToken\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAtu-wFLIvdjrNdcxJRSTelu8U5bSBBw-o\n",
+              "protocol": "https",
+              "host": [
+                "identitytoolkit",
+                "googleapis",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "accounts:signUp"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "AIzaSyAtu-wFLIvdjrNdcxJRSTelu8U5bSBBw-o\n"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "id": "fbd63585-ac2e-4702-8417-120144f82266",
+      "description": "This Folder Contains all API's related to Auth and User Management"
+    },
+    {
+      "name": "stories",
+      "item": [
+        {
+          "name": "stories/create-story",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5c4fe7a3-8b5f-4977-88ab-59548d5f0b47",
+                "exec": [
+                  "// ======================\r",
+                  "// Create Story API Tests\r",
+                  "// ======================\r",
+                  "\r",
+                  "// Parse response\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "// 1️⃣ Check if response status is 201 (Created)\r",
+                  "pm.test(\"Status code is 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "// 2️⃣ Validate response time is acceptable (< 2 seconds)\r",
+                  "pm.test(\"Response time is less than 2000ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+                  "});\r",
+                  "\r",
+                  "// 3️⃣ Check basic structure\r",
+                  "pm.test(\"Response has correct structure\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property('success');\r",
+                  "    pm.expect(jsonData).to.have.property('message');\r",
+                  "    pm.expect(jsonData).to.have.property('data');\r",
+                  "    pm.expect(jsonData).to.have.property('storyId');\r",
+                  "});\r",
+                  "\r",
+                  "// 4️⃣ Verify success is true\r",
+                  "pm.test(\"Success flag is true\", function () {\r",
+                  "    pm.expect(jsonData.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "// 5️⃣ Validate message\r",
+                  "pm.test(\"Message confirms creation\", function () {\r",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include(\"story created\");\r",
+                  "});\r",
+                  "\r",
+                  "// 6️⃣ Check for 'data' object and required fields\r",
+                  "pm.test(\"Data object contains required story fields\", function () {\r",
+                  "    const story = jsonData.data;\r",
+                  "    pm.expect(story).to.have.property('storyTitle');\r",
+                  "    pm.expect(story).to.have.property('storyDescription');\r",
+                  "    pm.expect(story).to.have.property('state');\r",
+                  "    pm.expect(story).to.have.property('location');\r",
+                  "    pm.expect(story).to.have.property('storyLength');\r",
+                  "    pm.expect(story).to.have.property('maxTravelersPerDay');\r",
+                  "    pm.expect(story).to.have.property('status');\r",
+                  "    pm.expect(story).to.have.property('createdBy');\r",
+                  "});\r",
+                  "\r",
+                  "// 7️⃣ Validate specific values\r",
+                  "pm.test(\"Story has correct status and valid values\", function () {\r",
+                  "    const story = jsonData.data;\r",
+                  "    pm.expect(story.status).to.eql(\"STEP 1 COMPLETED\");\r",
+                  "    pm.expect(story.storyLength).to.be.above(0);\r",
+                  "    pm.expect(story.maxTravelersPerDay).to.be.above(0);\r",
+                  "});\r",
+                  "\r",
+                  "// 8️⃣ Ensure createdBy exists and is a valid string\r",
+                  "pm.test(\"createdBy field is valid\", function () {\r",
+                  "    const story = jsonData.data;\r",
+                  "    pm.expect(story.createdBy).to.be.a('string');\r",
+                  "    pm.expect(story.createdBy.length).to.be.above(0);\r",
+                  "});\r",
+                  "\r",
+                  "// 9️⃣ Verify returned storyTitle and location match request body\r",
+                  "pm.test(\"Created story matches input request data\", function () {\r",
+                  "    const reqBody = JSON.parse(pm.request.body.raw);\r",
+                  "    const story = jsonData.data;\r",
+                  "    pm.expect(story.storyTitle).to.eql(reqBody.storyTitle);\r",
+                  "    pm.expect(story.location).to.eql(reqBody.location);\r",
+                  "});\r",
+                  "\r",
+                  "// 🔟 Validate storyId presence and format\r",
+                  "pm.test(\"Story ID exists and looks valid\", function () {\r",
+                  "    pm.expect(jsonData.storyId).to.be.a('string');\r",
+                  "    pm.expect(jsonData.storyId.length).to.be.greaterThan(5);\r",
+                  "});\r",
+                  "\r",
+                  "// 11️⃣ Handle possible DB constraints gracefully\r",
+                  "pm.test(\"No database or validation errors\", function () {\r",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.not.include(\"error\");\r",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.not.include(\"failed\");\r",
+                  "});\r",
+                  "\r",
+                  "// 12️⃣ Check for consistent status code and message pair\r",
+                  "pm.test(\"201 response corresponds with success:true\", function () {\r",
+                  "    if (pm.response.code === 201) {\r",
+                  "        pm.expect(jsonData.success).to.eql(true);\r",
+                  "    }\r",
+                  "});\r",
+                  "\r",
+                  "// 13️⃣ Optional: log for debug\r",
+                  "console.log(\"=== Story Creation Summary ===\");\r",
+                  "console.log(\"Status:\", pm.response.code);\r",
+                  "console.log(\"Message:\", jsonData.message);\r",
+                  "console.log(\"Story ID:\", jsonData.storyId);\r",
+                  "console.log(\"Story Title:\", jsonData.data?.storyTitle);\r",
+                  "console.log(\"Location:\", jsonData.data?.location);\r",
+                  "console.log(\"State:\", jsonData.data?.state);\r",
+                  "console.log(\"Status:\", jsonData.data?.status);\r",
+                  "console.log(\"===============================\");\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "69ad7851-7575-431d-b83b-18cd1a09b044",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"storyTitle\": \"Guruvayur Temple Darshan & Cultural Trip\",\r\n  \"storyDescription\": \"A guided cultural tour focused on the historic temple, regional architecture, and local traditions of Guruvayur.\",\r\n  \"state\": \"Kerala\",\r\n  \"location\": \"Guruvayur\",\r\n  \"tags\": [\"spiritual\", \"culture\", \"temple\", \"pilgrimage\", \"history\"],\r\n  \"availabilityType\": \"YEAR_ROUND\",\r\n  \"storyLength\": 4,\r\n  \"maxTravelersPerDay\": 75,\r\n  \"nominatimData\": {\r\n    \"lat\": \"10.5950431\",\r\n    \"lon\": \"76.0417924\",\r\n    \"display_name\": \"Guruvayur, Chavakkad, Thrissur, Kerala, 680101, India\",\r\n    \"name\": \"Guruvayur\",\r\n    \"address\": {\r\n      \"town\": \"Guruvayur\",\r\n      \"county\": \"Chavakkad\",\r\n      \"state_district\": \"Thrissur\",\r\n      \"state\": \"Kerala\",\r\n      \"postcode\": \"680101\",\r\n      \"country\": \"India\",\r\n      \"country_code\": \"in\"\r\n    },\r\n    \"boundingbox\": [\"10.5550431\", \"10.6350431\", \"76.0017924\", \"76.0817924\"]\r\n  }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/delete-story/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5c4fe7a3-8b5f-4977-88ab-59548d5f0b47",
+                "exec": [
+                  "// Parse the response\r",
+                  "var jsonData = pm.response.json();\r",
+                  "\r",
+                  "// Test 1: Check if response status is 200\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 2: Check response time is acceptable\r",
+                  "pm.test(\"Response time is less than 3000ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 3: Check if response has correct structure\r",
+                  "pm.test(\"Response has correct structure\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property('success');\r",
+                  "    pm.expect(jsonData).to.have.property('message');\r",
+                  "    pm.expect(jsonData).to.have.property('data');\r",
+                  "});\r",
+                  "\r",
+                  "// Test 4: Check if success is true\r",
+                  "pm.test(\"Success is true\", function () {\r",
+                  "    pm.expect(jsonData.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "// Test 5: Check success message\r",
+                  "pm.test(\"Success message is correct\", function () {\r",
+                  "    pm.expect(jsonData.message).to.include('deleted successfully');\r",
+                  "});\r",
+                  "\r",
+                  "// Test 6: Check data object structure\r",
+                  "pm.test(\"Data object contains storyId and imagesDeleted\", function () {\r",
+                  "    pm.expect(jsonData.data).to.have.property('storyId');\r",
+                  "    pm.expect(jsonData.data).to.have.property('imagesDeleted');\r",
+                  "});\r",
+                  "\r",
+                  "// Test 7: Verify storyId matches the requested ID\r",
+                  "pm.test(\"Returned storyId matches requested ID\", function () {\r",
+                  "    var requestedId = pm.request.url.getPath().split('/').pop();\r",
+                  "    pm.expect(jsonData.data.storyId).to.equal(requestedId);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 8: Check imagesDeleted is a number\r",
+                  "pm.test(\"imagesDeleted is a number\", function () {\r",
+                  "    pm.expect(jsonData.data.imagesDeleted).to.be.a('number');\r",
+                  "    pm.expect(jsonData.data.imagesDeleted).to.be.at.least(0);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 9: Verify Content-Type header\r",
+                  "pm.test(\"Content-Type is application/json\", function () {\r",
+                  "    pm.response.to.have.header(\"Content-Type\");\r",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+                  "});\r",
+                  "\r",
+                  "// Console log summary\r",
+                  "console.log(\"=== Story Deletion Summary ===\");\r",
+                  "console.log(\"Success: \" + jsonData.success);\r",
+                  "console.log(\"Message: \" + jsonData.message);\r",
+                  "console.log(\"Story ID: \" + jsonData.data.storyId);\r",
+                  "console.log(\"Images Deleted: \" + jsonData.data.imagesDeleted);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "8e178a03-4b47-40c4-86df-cccd0f0574c7",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/delete-story/458f8471-d1a9-4e0e-80dd-e20951f90f35",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "delete-story",
+                "458f8471-d1a9-4e0e-80dd-e20951f90f35"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/update-story/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5c4fe7a3-8b5f-4977-88ab-59548d5f0b47",
+                "exec": [
+                  "// Parse the response\r",
+                  "var jsonData = pm.response.json();\r",
+                  "\r",
+                  "// Test 1: Check if response status is 200\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 2: Check response time is acceptable\r",
+                  "pm.test(\"Response time is less than 3000ms\", function () {\r",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 3: Check if response has correct structure\r",
+                  "pm.test(\"Response has correct structure\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property('success');\r",
+                  "    pm.expect(jsonData).to.have.property('message');\r",
+                  "    pm.expect(jsonData).to.have.property('data');\r",
+                  "});\r",
+                  "\r",
+                  "// Test 4: Check if success is true\r",
+                  "pm.test(\"Success is true\", function () {\r",
+                  "    pm.expect(jsonData.success).to.be.true;\r",
+                  "});\r",
+                  "\r",
+                  "// Test 5: Check success message\r",
+                  "pm.test(\"Success message is correct\", function () {\r",
+                  "    pm.expect(jsonData.message).to.include('deleted successfully');\r",
+                  "});\r",
+                  "\r",
+                  "// Test 6: Check data object structure\r",
+                  "pm.test(\"Data object contains storyId and imagesDeleted\", function () {\r",
+                  "    pm.expect(jsonData.data).to.have.property('storyId');\r",
+                  "    pm.expect(jsonData.data).to.have.property('imagesDeleted');\r",
+                  "});\r",
+                  "\r",
+                  "// Test 7: Verify storyId matches the requested ID\r",
+                  "pm.test(\"Returned storyId matches requested ID\", function () {\r",
+                  "    var requestedId = pm.request.url.getPath().split('/').pop();\r",
+                  "    pm.expect(jsonData.data.storyId).to.equal(requestedId);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 8: Check imagesDeleted is a number\r",
+                  "pm.test(\"imagesDeleted is a number\", function () {\r",
+                  "    pm.expect(jsonData.data.imagesDeleted).to.be.a('number');\r",
+                  "    pm.expect(jsonData.data.imagesDeleted).to.be.at.least(0);\r",
+                  "});\r",
+                  "\r",
+                  "// Test 9: Verify Content-Type header\r",
+                  "pm.test(\"Content-Type is application/json\", function () {\r",
+                  "    pm.response.to.have.header(\"Content-Type\");\r",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+                  "});\r",
+                  "\r",
+                  "// Console log summary\r",
+                  "console.log(\"=== Story Deletion Summary ===\");\r",
+                  "console.log(\"Success: \" + jsonData.success);\r",
+                  "console.log(\"Message: \" + jsonData.message);\r",
+                  "console.log(\"Story ID: \" + jsonData.data.storyId);\r",
+                  "console.log(\"Images Deleted: \" + jsonData.data.imagesDeleted);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "4d494893-4c1b-466c-9316-41475ff5f66e",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"storyTitle\": \"Exploring Deletion Change\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/update-story/f74ccbcf-c712-4d35-bed7-00c716a7925b",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "update-story",
+                "f74ccbcf-c712-4d35-bed7-00c716a7925b"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/create-story/:id/page2",
+          "id": "3dae97a1-3935-42f9-a43c-1e4d20628117",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"locationType\": \"Pickup and Dropoff\",\r\n  \"pickupLocation\": \"Ernakulam Town Railway Station (ERN)\",\r\n  \"pickupGoogleMapLink\": \"https://goo.gl/maps/ernakulamPickup\",\r\n  \"dropOffLocation\": \"Bolgatty Palace & Resort Entrance\",\r\n  \"dropOffGoogleMapLink\": \"https://goo.gl/maps/bolgattyDropoff\",\r\n  \"hostName\": \"Priya Varma\",\r\n  \"hostDescription\": \"Dedicated concierge specializing in heritage, luxury stay, and event management on Kochi's iconic islands.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story/5ad781aa-c3dc-4936-8856-6466cc4501b4/page2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story",
+                "5ad781aa-c3dc-4936-8856-6466cc4501b4",
+                "page2"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/create-story/:id/page3",
+          "id": "bf066827-3d7f-4fc9-bbeb-5b734d2c1521",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"pricingType\": \"Per Person\",\r\n  \"amount\": 1500,\r\n  \"discount\": 500\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story/54f42a0c-b4d4-4351-aca2-6d6acdee82ac/page3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story",
+                "54f42a0c-b4d4-4351-aca2-6d6acdee82ac",
+                "page3"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/create-story/:id/page4",
+          "id": "445ec24c-f431-43e1-9775-db7a25eb5f5e",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "bannerImage",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/ChatGPT Image Nov 9, 2025, 01_09_55 AM.png"
+                },
+                {
+                  "key": "storyImage",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/WhatsApp Image 2025-11-02 at 23.30.40_3e122958.jpg"
+                },
+                {
+                  "key": "otherImages",
+                  "type": "file",
+                  "src": "/C:/Users/sange/Downloads/ankur-khanna-Zv1VFG5IJt8-unsplash.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story/54f42a0c-b4d4-4351-aca2-6d6acdee82ac/page4",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story",
+                "54f42a0c-b4d4-4351-aca2-6d6acdee82ac",
+                "page4"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/create-story/:id/page5",
+          "id": "a2576e37-938e-4937-a9d7-11cea4862112",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story/54f42a0c-b4d4-4351-aca2-6d6acdee82ac/page5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story",
+                "54f42a0c-b4d4-4351-aca2-6d6acdee82ac",
+                "page5"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/create-story/:id/publish",
+          "id": "7aaebdc0-0589-4562-9e31-e152161ad669",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story/f6374989-b2d6-4832-8739-f2f2802b7a9c/publish",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story",
+                "f6374989-b2d6-4832-8739-f2f2802b7a9c",
+                "publish"
+              ]
+            }
+          }
+        },
+        {
+          "name": "stories/create-story/:id/approve",
+          "id": "4ee8c144-30c7-480d-8e17-d89ffacf3fda",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/create-story/f6374989-b2d6-4832-8739-f2f2802b7a9c/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "create-story",
+                "f6374989-b2d6-4832-8739-f2f2802b7a9c",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Host Stories",
+          "id": "0d0dce23-db2e-4e67-a5ec-0af2444f144a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/my-stories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "my-stories"
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "2d7dec6f-8b40-4816-ade6-423f49c93d89",
+              "name": "Get Story by User Response",
+              "originalRequest": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/stories/my-stories",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "stories",
+                    "my-stories"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "_postman_previewtype": "html",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "6695"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"1a27-5KeynhS7kNTJN6NpZ1x1MvuaIio\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 05 Nov 2025 11:28:57 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "body": "{\n    \"success\": true,\n    \"message\": \"Stories retrieved successfully\",\n    \"data\": {\n        \"stories\": [\n            {\n                \"_id\": \"690b1af0e6a01f2d465a677a\",\n                \"storyTitle\": \"Treking in Munnar\",\n                \"storyDescription\": \"A 5-day journey through Munnars tranquil hills, lush paddy fields, and traditional villages, offering an authentic taste of God’s Own Country.\",\n                \"state\": \"Kerala\",\n                \"location\": \"Kochi\",\n                \"startDate\": \"2025-11-11T00:00:00.000Z\",\n                \"endDate\": \"2025-11-15T00:00:00.000Z\",\n                \"noOfDays\": 4,\n                \"maxTravelersPerDay\": 14,\n                \"status\": \"DRAFT\",\n                \"createdBy\": \"cf4aa7d0-2a24-41b9-b412-814a2a280a67\",\n                \"platformFee\": 50,\n                \"storyId\": \"a0512aa0-1ff3-47de-a1b0-f560682dd495\",\n                \"priceBreakdown\": [],\n                \"itinerary\": [],\n                \"createdAt\": \"2025-11-05T09:37:52.475Z\",\n                \"updatedAt\": \"2025-11-05T09:37:52.475Z\"\n            },\n            {\n                \"_id\": \"690b1a0db30a451e1395079c\",\n                \"storyTitle\": \"Treking in Munnar\",\n                \"storyDescription\": \"A 5-day journey through Munnars tranquil hills, lush paddy fields, and traditional villages, offering an authentic taste of God’s Own Country.\",\n                \"state\": \"Kerala\",\n                \"location\": \"Kochi\",\n                \"startDate\": \"2025-11-11T00:00:00.000Z\",\n                \"endDate\": \"2025-11-15T00:00:00.000Z\",\n                \"noOfDays\": 4,\n                \"maxTravelersPerDay\": 14,\n                \"status\": \"DRAFT\",\n                \"platformFee\": 50,\n                \"storyId\": \"b7f47b73-d9bc-4f7a-b3cc-d260e5fe1450\",\n                \"priceBreakdown\": [],\n                \"itinerary\": [],\n                \"createdAt\": \"2025-11-05T09:34:05.840Z\",\n                \"updatedAt\": \"2025-11-05T09:34:05.840Z\",\n                \"createdBy\": \"cf4aa7d0-2a24-41b9-b412-814a2a280a67\"\n            },\n            {\n                \"_id\": \"690b166099ee9787ab60c477\",\n                \"storyTitle\": \"Serene Backwaters of Kerala\",\n                \"storyDescription\": \"A 5-day journey through Kerala’s tranquil backwaters, lush paddy fields, and traditional villages, offering an authentic taste of God’s Own Country.\",\n                \"state\": \"Kerala\",\n                \"location\": \"Kochi\",\n                \"startDate\": \"2025-11-11T00:00:00.000Z\",\n                \"endDate\": \"2025-11-15T00:00:00.000Z\",\n                \"noOfDays\": 4,\n                \"maxTravelersPerDay\": 25,\n                \"status\": \"DRAFT\",\n                \"platformFee\": 50,\n                \"storyId\": \"0f8b15d1-3458-4477-925a-af51b6066ea5\",\n                \"priceBreakdown\": [\n                    {\n                        \"label\": \"Base Price\",\n                        \"value\": 10000\n                    },\n                    {\n                        \"label\": \"Discount\",\n                        \"value\": 1000\n                    },\n                    {\n                        \"label\": \"Platform Fee\",\n                        \"value\": 50\n                    },\n                    {\n                        \"label\": \"Total Price\",\n                        \"value\": 9050\n                    }\n                ],\n                \"itinerary\": [\n                    {\n                        \"day\": 1,\n                        \"activities\": [\n                            {\n                                \"type\": \"Transfer\",\n                                \"activityName\": \"Pickup from Cochin International Airport\",\n                                \"activityDescription\": \"Private SUV transfer to Fort Kochi boutique hotel. Driver will assist with luggage and check-in.\",\n                                \"activityTime\": \"08:30 AM\",\n                                \"activityDuration\": \"1 hour\",\n                                \"activityLocation\": \"Cochin International Airport → Forte Kochi Hotel\"\n                            },\n                            {\n                                \"type\": \"Cultural\",\n                                \"activityName\": \"Fort Kochi Heritage Walk\",\n                                \"activityDescription\": \"Guided walking tour through St. Francis Church, Dutch Cemetery, and Chinese Fishing Nets.\",\n                                \"activityTime\": \"11:00 AM\",\n                                \"activityDuration\": \"2 hours\",\n                                \"activityLocation\": \"Fort Kochi, Kerala\"\n                            },\n                            {\n                                \"type\": \"Food\",\n                                \"activityName\": \"Lunch at Brunton Boatyard\",\n                                \"activityDescription\": \"Set-menu lunch featuring traditional Kerala seafood and coconut-based curries.\",\n                                \"activityTime\": \"01:30 PM\",\n                                \"activityDuration\": \"1 hour 15 min\",\n                                \"activityLocation\": \"Brunton Boatyard Restaurant, Fort Kochi\"\n                            }\n                        ]\n                    },\n                    {\n                        \"day\": 2,\n                        \"activities\": [\n                            {\n                                \"type\": \"Transfer\",\n                                \"activityName\": \"Drive to Munnar\",\n                                \"activityDescription\": \"Scenic hill-station drive via waterfalls and spice plantations.\",\n                                \"activityTime\": \"07:30 AM\",\n                                \"activityDuration\": \"5 hours\",\n                                \"activityLocation\": \"Fort Kochi → Munnar\"\n                            },\n                            {\n                                \"type\": \"Nature\",\n                                \"activityName\": \"Tea Museum Visit\",\n                                \"activityDescription\": \"Tour of the Tata Tea Museum with tasting session and short factory demo.\",\n                                \"activityTime\": \"02:00 PM\",\n                                \"activityDuration\": \"1 hour 30 min\",\n                                \"activityLocation\": \"Tata Tea Museum, Munnar\"\n                            },\n                            {\n                                \"type\": \"Leisure\",\n                                \"activityName\": \"Evening Walk & Sunset Point\",\n                                \"activityDescription\": \"Leisure walk through tea plantations ending at Pothamedu View Point for sunset photos.\",\n                                \"activityTime\": \"05:30 PM\",\n                                \"activityDuration\": \"1 hour\",\n                                \"activityLocation\": \"Pothamedu View Point, Munnar\"\n                            }\n                        ]\n                    },\n                    {\n                        \"day\": 3,\n                        \"activities\": [\n                            {\n                                \"type\": \"Adventure\",\n                                \"activityName\": \"Eravikulam National Park Trek\",\n                                \"activityDescription\": \"Early-morning guided trek with jeep transfer and wildlife sighting of Nilgiri Tahr.\",\n                                \"activityTime\": \"06:00 AM\",\n                                \"activityDuration\": \"3 hours\",\n                                \"activityLocation\": \"Eravikulam National Park, Munnar\"\n                            },\n                            {\n                                \"type\": \"Leisure\",\n                                \"activityName\": \"Spa & Ayurvedic Massage\",\n                                \"activityDescription\": \"Full-body rejuvenation therapy using traditional oils and herbal compresses.\",\n                                \"activityTime\": \"03:30 PM\",\n                                \"activityDuration\": \"1 hour 30 min\",\n                                \"activityLocation\": \"Parakkat Resort Spa, Munnar\"\n                            }\n                        ]\n                    },\n                    {\n                        \"day\": 4,\n                        \"activities\": [\n                            {\n                                \"type\": \"Transfer\",\n                                \"activityName\": \"Return Drive to Cochin\",\n                                \"activityDescription\": \"Check-out and private drive back to Cochin with a stop at Valara Waterfalls.\",\n                                \"activityTime\": \"09:00 AM\",\n                                \"activityDuration\": \"5 hours\",\n                                \"activityLocation\": \"Munnar → Cochin\"\n                            },\n                            {\n                                \"type\": \"Departure\",\n                                \"activityName\": \"Drop-off at Cochin Airport\",\n                                \"activityDescription\": \"Assisted airport transfer and end of services.\",\n                                \"activityTime\": \"03:00 PM\",\n                                \"activityDuration\": \"45 min\",\n                                \"activityLocation\": \"Cochin International Airport (COK)\"\n                            }\n                        ]\n                    }\n                ],\n                \"createdAt\": \"2025-11-05T09:18:24.097Z\",\n                \"updatedAt\": \"2025-11-05T09:23:32.296Z\",\n                \"hostDescription\": \"Experienced local guide with 10+ years of hosting backwater Retreats and cultural tours.\",\n                \"hostName\": \"Rohit Sharma\",\n                \"locationType\": \"Pickup Only\",\n                \"pickupGoogleMapLink\": \"https://goo.gl/maps/examplePickup\",\n                \"pickupLocation\": \"Kochi Airport Terminal 3\",\n                \"amount\": 10000,\n                \"discount\": 1000,\n                \"pricingType\": \"Per Day\",\n                \"totalPrice\": 9050,\n                \"storyImages\": {\n                    \"bannerImage\": {\n                        \"key\": \"stories/0f8b15d1-3458-4477-925a-af51b6066ea5/banner/70885c22-af04-4db9-a91c-f17f5153107c.jpg\",\n                        \"url\": \"https://mmt-app-bucket.s3.us-east-1.amazonaws.com/stories/0f8b15d1-3458-4477-925a-af51b6066ea5/banner/70885c22-af04-4db9-a91c-f17f5153107c.jpg\"\n                    },\n                    \"storyImage\": {\n                        \"key\": \"stories/0f8b15d1-3458-4477-925a-af51b6066ea5/main/f8f9b167-af3b-4151-a7aa-345e57d4495d.jpg\",\n                        \"url\": \"https://mmt-app-bucket.s3.us-east-1.amazonaws.com/stories/0f8b15d1-3458-4477-925a-af51b6066ea5/main/f8f9b167-af3b-4151-a7aa-345e57d4495d.jpg\"\n                    },\n                    \"otherImages\": [\n                        {\n                            \"key\": \"stories/0f8b15d1-3458-4477-925a-af51b6066ea5/others/7b825327-8a32-435d-bdda-9c461f51ae48.jpg\",\n                            \"url\": \"https://mmt-app-bucket.s3.us-east-1.amazonaws.com/stories/0f8b15d1-3458-4477-925a-af51b6066ea5/others/7b825327-8a32-435d-bdda-9c461f51ae48.jpg\"\n                        },\n                        {\n                            \"key\": \"stories/0f8b15d1-3458-4477-925a-af51b6066ea5/others/814c097b-38e9-4e99-bb6b-4fe3e566bd62.jpg\",\n                            \"url\": \"https://mmt-app-bucket.s3.us-east-1.amazonaws.com/stories/0f8b15d1-3458-4477-925a-af51b6066ea5/others/814c097b-38e9-4e99-bb6b-4fe3e566bd62.jpg\"\n                        },\n                        {\n                            \"key\": \"stories/0f8b15d1-3458-4477-925a-af51b6066ea5/others/fd16596a-19b0-443b-be5c-fbac0d9dea14.png\",\n                            \"url\": \"https://mmt-app-bucket.s3.us-east-1.amazonaws.com/stories/0f8b15d1-3458-4477-925a-af51b6066ea5/others/fd16596a-19b0-443b-be5c-fbac0d9dea14.png\"\n                        }\n                    ]\n                },\n                \"dropOffTime\": \"2025-11-16T20:15:00.000Z\",\n                \"pickUpTime\": \"2025-11-12T07:45:00.000Z\",\n                \"createdBy\": \"cf4aa7d0-2a24-41b9-b412-814a2a280a67\"\n            }\n        ],\n        \"count\": 3\n    }\n}"
+            }
+          ]
+        }
+      ],
+      "id": "1582154a-033d-470b-a812-0561632dbda6"
+    },
+    {
+      "name": "fees",
+      "item": [
+        {
+          "name": "/fees",
+          "id": "a2662956-d0b0-4815-b544-f3bfb2748916",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"feeName\": \"Tax\",\r\n  \"feeAmount\": 150\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/fees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/fees",
+          "id": "8ba153c9-178e-4039-b45a-f003c225bd7f",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/fees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "fees"
+              ]
+            }
+          }
+        }
+      ],
+      "id": "87b8c449-3680-49af-b817-bd87d2535580"
+    },
+    {
+      "name": "legal",
+      "item": [
+        {
+          "name": "legal/create-legal",
+          "id": "1a777db6-ef0c-40aa-8eb6-44143444454b",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"legalName\": \"Privacy Policy\",\r\n  \"legalDescription\": \"Complete terms and conditions for users...\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/legal/create-legal",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "legal",
+                "create-legal"
+              ]
+            }
+          }
+        },
+        {
+          "name": "legal/all-legal",
+          "id": "d2348181-599d-4b5d-be3b-a0f07bf1a7dd",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/legal/all-legal",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "legal",
+                "all-legal"
+              ]
+            }
+          }
+        },
+        {
+          "name": "legal/single-legal/:id",
+          "id": "880e4a44-f104-4018-8c7e-dd2239f83a0a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"legalName\": \"Terms of Conditions\",\r\n  \"legalDescription\": \"Complete terms and conditions for users...\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/legal/single-legal/2a200c2b-4a8e-4d7f-a7fa-72e9ce70494a",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "legal",
+                "single-legal",
+                "2a200c2b-4a8e-4d7f-a7fa-72e9ce70494a"
+              ]
+            }
+          }
+        },
+        {
+          "name": "legal/single-legal/:id",
+          "id": "d4e4ae0b-db7c-4f9d-b2bb-8185e3c2c319",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"legalName\": \"Terms and Conditions\",\r\n  \"legalDescription\": \"Complete terms and conditions for users...\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/legal/update-legal/2a200c2b-4a8e-4d7f-a7fa-72e9ce70494a",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "legal",
+                "update-legal",
+                "2a200c2b-4a8e-4d7f-a7fa-72e9ce70494a"
+              ]
+            }
+          }
+        },
+        {
+          "name": "legal/delete-legal/:id",
+          "id": "e56661f7-d9b4-48bf-a433-62ce1f10ef4c",
+          "request": {
+            "method": "DELETE",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/legal/delete-legal/2a200c2b-4a8e-4d7f-a7fa-72e9ce70494a",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "legal",
+                "delete-legal",
+                "2a200c2b-4a8e-4d7f-a7fa-72e9ce70494a"
+              ]
+            }
+          }
+        }
+      ],
+      "id": "71a2749a-6e4b-4237-95e0-28ffdf9641dc"
+    },
+    {
+      "name": "bookings",
+      "item": [
+        {
+          "name": "traveller-bookings",
+          "item": [
+            {
+              "name": "bookings/traveller-bookings",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "50b59054-6f7b-4f2f-b594-e1735dcf4485",
+                    "exec": [
+                      "// Parse the response\r",
+                      "var jsonData = pm.response.json();\r",
+                      "\r",
+                      "// Test 1: Check if response status is 200\r",
+                      "pm.test(\"Status code is 200\", function () {\r",
+                      "    pm.response.to.have.status(200);\r",
+                      "});\r",
+                      "\r",
+                      "// Test 2: Check response time is acceptable (less than 2 seconds)\r",
+                      "pm.test(\"Response time is less than 2000ms\", function () {\r",
+                      "    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+                      "});\r",
+                      "\r",
+                      "// Test 3: Check if response has correct structure\r",
+                      "pm.test(\"Response has correct structure\", function () {\r",
+                      "    pm.expect(jsonData).to.have.property('success');\r",
+                      "    pm.expect(jsonData).to.have.property('message');\r",
+                      "    pm.expect(jsonData).to.have.property('data');\r",
+                      "});\r",
+                      "\r",
+                      "// Test 4: Check if success is true\r",
+                      "pm.test(\"Success is true\", function () {\r",
+                      "    pm.expect(jsonData.success).to.be.true;\r",
+                      "});\r",
+                      "\r",
+                      "// Test 5: Check if data has upcoming and past arrays\r",
+                      "pm.test(\"Data contains upcoming and past arrays\", function () {\r",
+                      "    pm.expect(jsonData.data).to.have.property('upcoming');\r",
+                      "    pm.expect(jsonData.data).to.have.property('past');\r",
+                      "    pm.expect(jsonData.data.upcoming).to.be.an('array');\r",
+                      "    pm.expect(jsonData.data.past).to.be.an('array');\r",
+                      "});\r",
+                      "\r",
+                      "// Test 6: Check if booking objects have required fields (if bookings exist)\r",
+                      "if (jsonData.data.upcoming.length > 0) {\r",
+                      "    pm.test(\"Upcoming bookings have required fields\", function () {\r",
+                      "        var booking = jsonData.data.upcoming[0];\r",
+                      "        pm.expect(booking).to.have.property('bookingId');\r",
+                      "        pm.expect(booking).to.have.property('storyId');\r",
+                      "        pm.expect(booking).to.have.property('storyName');\r",
+                      "        pm.expect(booking).to.have.property('storylocation');\r",
+                      "        pm.expect(booking).to.have.property('storyState');\r",
+                      "        pm.expect(booking).to.have.property('Dates');\r",
+                      "        pm.expect(booking).to.have.property('totalNoOfTravellers');\r",
+                      "    });\r",
+                      "\r",
+                      "    pm.test(\"Dates object has startDate and endDate\", function () {\r",
+                      "        var booking = jsonData.data.upcoming[0];\r",
+                      "        pm.expect(booking.Dates).to.have.property('startDate');\r",
+                      "        pm.expect(booking.Dates).to.have.property('endDate');\r",
+                      "    });\r",
+                      "\r",
+                      "    pm.test(\"Upcoming booking endDate is today or in future\", function () {\r",
+                      "        var booking = jsonData.data.upcoming[0];\r",
+                      "        var today = new Date();\r",
+                      "        today.setHours(0, 0, 0, 0);\r",
+                      "        var endDate = new Date(booking.Dates.endDate);\r",
+                      "        endDate.setHours(0, 0, 0, 0);\r",
+                      "        pm.expect(endDate.getTime()).to.be.at.least(today.getTime());\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "if (jsonData.data.past.length > 0) {\r",
+                      "    pm.test(\"Past bookings have required fields\", function () {\r",
+                      "        var booking = jsonData.data.past[0];\r",
+                      "        pm.expect(booking).to.have.property('bookingId');\r",
+                      "        pm.expect(booking).to.have.property('storyId');\r",
+                      "        pm.expect(booking).to.have.property('storyName');\r",
+                      "        pm.expect(booking).to.have.property('storylocation');\r",
+                      "        pm.expect(booking).to.have.property('storyState');\r",
+                      "        pm.expect(booking).to.have.property('Dates');\r",
+                      "        pm.expect(booking).to.have.property('totalNoOfTravellers');\r",
+                      "    });\r",
+                      "\r",
+                      "    pm.test(\"Past booking endDate is before today\", function () {\r",
+                      "        var booking = jsonData.data.past[0];\r",
+                      "        var today = new Date();\r",
+                      "        today.setHours(0, 0, 0, 0);\r",
+                      "        var endDate = new Date(booking.Dates.endDate);\r",
+                      "        endDate.setHours(0, 0, 0, 0);\r",
+                      "        pm.expect(endDate.getTime()).to.be.below(today.getTime());\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "// Test 7: Check total bookings count\r",
+                      "pm.test(\"Total bookings count is consistent\", function () {\r",
+                      "    var totalCount = jsonData.data.upcoming.length + jsonData.data.past.length;\r",
+                      "    console.log(\"Total bookings: \" + totalCount);\r",
+                      "    console.log(\"Upcoming: \" + jsonData.data.upcoming.length);\r",
+                      "    console.log(\"Past: \" + jsonData.data.past.length);\r",
+                      "});\r",
+                      "\r",
+                      "// Test 8: Verify no duplicate bookingIds\r",
+                      "pm.test(\"No duplicate bookingIds\", function () {\r",
+                      "    var allBookings = [...jsonData.data.upcoming, ...jsonData.data.past];\r",
+                      "    var bookingIds = allBookings.map(b => b.bookingId);\r",
+                      "    var uniqueIds = new Set(bookingIds);\r",
+                      "    pm.expect(bookingIds.length).to.equal(uniqueIds.size);\r",
+                      "});\r",
+                      "\r",
+                      "// Test 9: Check if totalNoOfTravellers is a positive number (if bookings exist)\r",
+                      "if (jsonData.data.upcoming.length > 0 || jsonData.data.past.length > 0) {\r",
+                      "    pm.test(\"totalNoOfTravellers is a positive number\", function () {\r",
+                      "        var allBookings = [...jsonData.data.upcoming, ...jsonData.data.past];\r",
+                      "        allBookings.forEach(booking => {\r",
+                      "            pm.expect(booking.totalNoOfTravellers).to.be.a('number');\r",
+                      "            pm.expect(booking.totalNoOfTravellers).to.be.above(0);\r",
+                      "        });\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "// Test 10: Verify bookings are sorted by startDate (upcoming)\r",
+                      "if (jsonData.data.upcoming.length > 1) {\r",
+                      "    pm.test(\"Upcoming bookings are sorted by startDate\", function () {\r",
+                      "        for (let i = 0; i < jsonData.data.upcoming.length - 1; i++) {\r",
+                      "            var currentDate = new Date(jsonData.data.upcoming[i].Dates.startDate);\r",
+                      "            var nextDate = new Date(jsonData.data.upcoming[i + 1].Dates.startDate);\r",
+                      "            pm.expect(currentDate.getTime()).to.be.at.most(nextDate.getTime());\r",
+                      "        }\r",
+                      "    });\r",
+                      "}\r",
+                      "\r",
+                      "// Console log summary\r",
+                      "console.log(\"=== Booking Summary ===\");\r",
+                      "console.log(\"Success: \" + jsonData.success);\r",
+                      "console.log(\"Message: \" + jsonData.message);\r",
+                      "console.log(\"Upcoming bookings: \" + jsonData.data.upcoming.length);\r",
+                      "console.log(\"Past bookings: \" + jsonData.data.past.length);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "id": "536e5f9f-6dbc-4418-a776-b76bbe0f6df5",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"date\":\"2025-11-05\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/bookings/traveller-bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "traveller-bookings"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "bookings/create-booking",
+              "id": "4816b4cc-9833-42ef-a1bc-785ab9af45aa",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"storyId\": \"f6374989-b2d6-4832-8739-f2f2802b7a9c\",\r\n  \"startDate\": \"2025-12-01\",\r\n  \"endDate\": \"2025-12-10\",\r\n  \"noOfTravellers\": 2,\r\n  \"travellers\": [\r\n    {\r\n      \"fullName\": \"Reyvanth Sar\",\r\n      \"emailAddress\": \"reyvanth.kumar@example.com\",\r\n      \"phoneNumber\": \"+919876543201\"\r\n    },\r\n    {\r\n      \"fullName\": \"Anjali Menon\",\r\n      \"emailAddress\": \"anjali.menon@example.com\",\r\n      \"phoneNumber\": \"+919876543202\"\r\n    }\r\n  ],\r\n  \"paymentDetails\": [\r\n    {\r\n      \"totalBase\": 58000,\r\n      \"platformFee\": 150,\r\n      \"discount\": 2200,\r\n      \"totalPayment\": 55950\r\n    }\r\n  ]\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/bookings/create-booking",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "create-booking"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "bookings/details/:id",
+              "id": "eb4876f4-160e-4686-93d3-94bad06e47ce",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/bookings/details/3ecc835d-2564-4d38-a7fb-435cef879601",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "details",
+                    "3ecc835d-2564-4d38-a7fb-435cef879601"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "bookings/traveller/my-bookings",
+              "id": "970431fb-b4bd-4298-8b2f-bccb5ab977b8",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/bookings/traveller/my-bookings",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "traveller",
+                    "my-bookings"
+                  ]
+                }
+              }
+            }
+          ],
+          "id": "2f789a95-a1ba-4e71-a4a8-3c4b9e89e67b"
+        },
+        {
+          "name": "host-bookings",
+          "item": [
+            {
+              "name": "analytics/year-round",
+              "id": "cdfaea0c-ded1-42df-ae65-8a25d168b395",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"date\": \"2025-11-05\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/bookings/analytics/year-round",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "analytics",
+                    "year-round"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "analytics/travel-with-stars",
+              "id": "bcc42ef6-acb2-4af5-bfcb-f1a9538f3f08",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"month\":\"12\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/bookings/analytics/travel-with-stars",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "bookings",
+                    "analytics",
+                    "travel-with-stars"
+                  ]
+                }
+              }
+            }
+          ],
+          "id": "7868159f-d9d0-458c-8f09-2695808da757"
+        },
+        {
+          "name": "Search API",
+          "id": "9a4d1a1b-e3d6-4d67-9987-b9116afdf0e7",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "MyPostmanTest/1.0",
+                "type": "text"
+              },
+              {
+                "key": "Referer",
+                "value": "https://localhost",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://nominatim.openstreetmap.org/search?q=Guruvayur&format=json&countrycodes=in&limit=10&addressdetails=1",
+              "protocol": "https",
+              "host": [
+                "nominatim",
+                "openstreetmap",
+                "org"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Guruvayur"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                },
+                {
+                  "key": "countrycodes",
+                  "value": "in"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "addressdetails",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "id": "c2a06fb4-c7dc-4103-bde8-33106e7b858c"
+    },
+    {
+      "name": "metrics",
+      "item": [
+        {
+          "name": "metrics/recent-stories",
+          "id": "25329995-d75b-4127-8001-ebd5e48eab64",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/recent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "recent"
+              ]
+            }
+          }
+        },
+        {
+          "name": "metric/most-booked",
+          "id": "42684515-cf9a-446e-a9e0-4555b8cee315",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"date\":\"2025-11-07\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stories/most-booked",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "stories",
+                "most-booked"
+              ]
+            }
+          }
+        }
+      ],
+      "id": "2d0e700c-be24-423f-9430-4c2eab9c5148"
+    },
+    {
+      "name": "travellers",
+      "item": [
+        {
+          "name": "profile/get-profile-details/:Id",
+          "id": "2eec7e6e-e3a9-427b-babc-bd9339a50c65",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/traveller/profile/get-profile-details/a0858f74-e741-4735-a34e-d9b05da2cba0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "traveller",
+                "profile",
+                "get-profile-details",
+                "a0858f74-e741-4735-a34e-d9b05da2cba0"
+              ]
+            }
+          }
+        },
+        {
+          "name": "profile/update-profile/:Id",
+          "id": "9ad1c758-a0dc-46c1-9990-a2537c63f598",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"phoneNumber\": \"+1234567890\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/traveller/profile/update-profile/a0858f74-e741-4735-a34e-d9b05da2cba0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "traveller",
+                "profile",
+                "update-profile",
+                "a0858f74-e741-4735-a34e-d9b05da2cba0"
+              ]
+            }
+          }
+        },
+        {
+          "name": "profile/change-password/:Id",
+          "id": "2b4163f9-020d-4c40-872b-28043bb79312",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"currentPassword\": \"newpassword456\",\r\n  \"newPassword\": \"securepassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/traveller/profile/change-password/a0858f74-e741-4735-a34e-d9b05da2cba0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "traveller",
+                "profile",
+                "change-password",
+                "a0858f74-e741-4735-a34e-d9b05da2cba0"
+              ]
+            }
+          }
+        }
+      ],
+      "id": "9fa800ec-70ba-4f08-ae62-887649bc736c"
+    },
+    {
+      "name": "admin",
+      "item": [
+        {
+          "name": "admin-host",
+          "item": [
+            {
+              "name": "admin/host-list",
+              "id": "e9bb79c0-1fa3-445b-b482-0ad60b438f3d",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"page\": 1,\r\n  \"limit\": 3,\r\n  \"sort\": \"A-Z\",\r\n  \"status\": \"ALL\"\r\n\r\n  // --- SORT TYPES ---\r\n  // \"sort\": \"A-Z\"\r\n  // \"sort\": \"Z-A\"\r\n  // \"sort\": \"DateJoined\"\r\n\r\n  // --- STATUS TYPES ---\r\n  // \"status\": \"ACTIVE\"\r\n  // \"status\": \"PENDING\"\r\n  // \"status\": \"BLOCKED\"\r\n  // \"status\": \"ALL\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/hosts",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "hosts"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/approve-host",
+              "id": "a597aaee-012b-4d11-8398-6648eb48e801",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"hostId\":\"0067f8f5-500e-4655-8bd8-61c72aff737f\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/hosts/approve",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "hosts",
+                    "approve"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/unblock-host",
+              "id": "e4a3cf43-31a5-4c29-8df7-a583b502df22",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"hostId\":\"0067f8f5-500e-4655-8bd8-61c72aff737f\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/hosts/unblock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "hosts",
+                    "unblock"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/block-host",
+              "id": "a5705286-d8d8-48b3-9afb-1ce3a89991ed",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"hostId\":\"0067f8f5-500e-4655-8bd8-61c72aff737f\",\r\n    \"blockReason\": \"Violation of platform rules\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/hosts/block",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "hosts",
+                    "block"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/reject-host",
+              "id": "5330aa35-873b-4bf8-9605-bac229a99168",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"hostId\":\"0067f8f5-500e-4655-8bd8-61c72aff737f\",\r\n    \"rejectReason\": \"Violation of platform rules\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/hosts/reject",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "hosts",
+                    "reject"
+                  ]
+                }
+              }
+            }
+          ],
+          "id": "eec72af5-0a40-4c72-8792-a8b2fd340bf2"
+        },
+        {
+          "name": "admin-traveller",
+          "item": [
+            {
+              "name": "admin/traveller-list",
+              "id": "978053df-b900-437b-baac-7e014658eea1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"page\": 1,\r\n  \"limit\": 3,\r\n\r\n  // --- SORT TYPES ---\r\n//   \"sort\": \"A-Z\",\r\n   \"sort\": \"Z-A\",\r\n  // \"sort\": \"DateJoined\",\r\n\r\n  // --- STATUS TYPES ---\r\n  \"status\": \"ALL\"\r\n  // \"status\": \"ACTIVE\"\r\n  // \"status\": \"BLOCKED\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/travellers",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "travellers"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/block-traveller",
+              "id": "89de1a05-ba24-4854-a068-17a7cb109b1a",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"userId\": \"71d3c586-1497-443a-9c6b-5fbe2fcff549\",\r\n  \"blockReason\": \"Violation of terms of service\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/travellers/block",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "travellers",
+                    "block"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/unblock-traveller",
+              "id": "51d34010-3207-4aac-87b7-8d26b34f52a7",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"userId\": \"71d3c586-1497-443a-9c6b-5fbe2fcff549\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/travellers/unblock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "travellers",
+                    "unblock"
+                  ]
+                }
+              }
+            }
+          ],
+          "id": "f4c0d5d7-eff5-4226-b4fe-8fbe5663ec71"
+        },
+        {
+          "name": "admin-story",
+          "item": [
+            {
+              "name": "admin/block-story",
+              "id": "8a1fe579-9562-4b50-83f3-5b7acca153aa",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"storyId\": \"f6374989-b2d6-4832-8739-f2f2802b7a9c\",\r\n  \"blockReason\": \"Inappropriate content\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/stories/block",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "stories",
+                    "block"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "admin/unblock-story",
+              "id": "a37ebfbc-52cb-409b-94fa-54fbb0704199",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"storyId\": \"f6374989-b2d6-4832-8739-f2f2802b7a9c\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/stories/unblock",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "stories",
+                    "unblock"
+                  ]
+                }
+              }
+            }
+          ],
+          "id": "e245c2ba-dce9-4176-a4f3-839a2c765c0b"
+        }
+      ],
+      "id": "2f5a2a88-113d-4ded-ae48-d6999ee83f46"
+    }
+  ],
+  "variable": [
+    {
+      "id": "2d8b0505-d46d-46b0-beda-7daca5dcbc5b",
+      "key": "id",
+      "value": "1"
+    },
+    {
+      "id": "540c1d04-ce9d-43c9-9dc9-5458566bf9b4",
+      "key": "base_url",
+      "value": "https://template.postman-echo.com"
+    }
+  ]
+}
