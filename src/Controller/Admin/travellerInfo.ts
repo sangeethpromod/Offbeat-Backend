@@ -1,1 +1,0 @@
-//Give me an api that gets traveller using userID in params, the response should have Name, EmailID, userID, Role, Date Joined, Total Number of Bookings, TotalAmount Spent, TotalStories completed, Booked stories, (this will be in a table in frontend so) StoryName, HostName, BookingDate, AmountPaid, Booking Status (if booked then Confirmed)

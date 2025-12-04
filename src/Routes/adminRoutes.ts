@@ -1,7 +1,14 @@
 import { Router } from 'express';
-import { getHostList } from '../Controller/Admin/hostKPIController';
-import { getTravellerList } from '../Controller/Admin/travellerKPIController';
+import {
+  getHostList,
+  getHostDetails,
+} from '../Controller/Admin/hostKPIController';
+import {
+  getTravellerList,
+  getTravellerDetails,
+} from '../Controller/Admin/travellerKPIController';
 import { getStoryList } from '../Controller/Admin/storyKPIController';
+import { getStoryDetails } from '../Controller/Admin/storyDetailsController';
 import {
   blockTraveller,
   unblockTraveller,
@@ -36,8 +43,14 @@ adminRoutes.use(verifyAccessToken, requireAdmin);
 // Retrieves paginated host list with filters & sorting.
 adminRoutes.post('/hosts', getHostList);
 
+// Get detailed host information by userId
+adminRoutes.get('/hosts/:userId', getHostDetails);
+
 // Retrieves paginated traveller list with filters & sorting.
 adminRoutes.post('/travellers', getTravellerList);
+
+// Get detailed traveller information by userId
+adminRoutes.get('/travellers/:userId', getTravellerDetails);
 
 // Retrieves paginated story list with filters & sorting.
 adminRoutes.post('/stories', getStoryList);
@@ -81,6 +94,9 @@ adminRoutes.patch('/travellers/unblock', unblockTraveller);
 // Routes for managing stories:
 // Block → Unblock
 // -------------------------------------------------------
+
+// Get detailed story information by storyId
+adminRoutes.get('/stories/:storyId', getStoryDetails);
 
 // Action: Block a story + record reason
 adminRoutes.patch('/stories/block', blockStory);

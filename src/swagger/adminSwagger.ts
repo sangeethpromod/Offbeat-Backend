@@ -602,4 +602,322 @@
  *         description: Forbidden - User does not have admin role
  *       500:
  *         description: Internal server error
+ *
+ * /api/admin/stories/{storyId}:
+ *   get:
+ *     summary: Get detailed story information by storyId (Admin only)
+ *     description: |
+ *       Retrieve comprehensive details about a specific story including all metadata,
+ *       pricing, itinerary, host information, and images.
+ *
+ *       **Use Cases:**
+ *       - Admin review and moderation
+ *       - Story approval workflow
+ *       - Detailed story inspection
+ *       - Content verification
+ *
+ *       **Returned Information:**
+ *       - Basic story metadata (title, status, dates)
+ *       - Creator/host information
+ *       - Location details with geolocation data
+ *       - Availability and capacity details
+ *       - Pricing breakdown
+ *       - Pickup/dropoff information
+ *       - Complete itinerary
+ *       - All uploaded images
+ *     tags: [Admin - Story Management]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: storyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Unique identifier of the story
+ *         example: "d2786740-a221-4bd8-9c10-6a530b78b77d"
+ *     responses:
+ *       200:
+ *         description: Story details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     storyId:
+ *                       type: string
+ *                       example: "d2786740-a221-4bd8-9c10-6a530b78b77d"
+ *                     storyTitle:
+ *                       type: string
+ *                       example: "Backwaters of Alleppey"
+ *                     status:
+ *                       type: string
+ *                       enum: [DRAFT, STEP 1 COMPLETED, STEP 2 COMPLETED, STEP 3 COMPLETED, STEP 4 COMPLETED, STEP 5 COMPLETED, PUBLISHED, APPROVED, BLOCKED]
+ *                       example: "PUBLISHED"
+ *                     blockReason:
+ *                       type: string
+ *                       nullable: true
+ *                       example: null
+ *                     createdBy:
+ *                       type: object
+ *                       properties:
+ *                         userId:
+ *                           type: string
+ *                           example: "user-uuid-123"
+ *                         fullName:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         email:
+ *                           type: string
+ *                           example: "john.doe@example.com"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2023-05-15T10:00:00.000Z"
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-12-01T15:30:00.000Z"
+ *                     storyDescription:
+ *                       type: string
+ *                       example: "Experience the serene backwaters of Alleppey with traditional houseboats and local cuisine."
+ *                     state:
+ *                       type: string
+ *                       example: "Kerala"
+ *                     location:
+ *                       type: string
+ *                       example: "Alleppey"
+ *                     locationDetails:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         lat:
+ *                           type: number
+ *                           example: 9.4981
+ *                         lon:
+ *                           type: number
+ *                           example: 76.3388
+ *                         geoPoint:
+ *                           type: object
+ *                           properties:
+ *                             type:
+ *                               type: string
+ *                               example: "Point"
+ *                             coordinates:
+ *                               type: array
+ *                               items:
+ *                                 type: number
+ *                               example: [76.3388, 9.4981]
+ *                         displayName:
+ *                           type: string
+ *                           example: "Alleppey, Kerala, India"
+ *                         state:
+ *                           type: string
+ *                           example: "Kerala"
+ *                         district:
+ *                           type: string
+ *                           example: "Alappuzha"
+ *                     availabilityType:
+ *                       type: string
+ *                       enum: [YEAR_ROUND, TRAVEL_WITH_STARS]
+ *                       example: "YEAR_ROUND"
+ *                     tags:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["Adventure", "Culture", "Nature", "Relaxation"]
+ *                     availabilityDetails:
+ *                       type: object
+ *                       properties:
+ *                         storyLength:
+ *                           type: number
+ *                           nullable: true
+ *                           example: 2
+ *                         maxTravelersPerDay:
+ *                           type: number
+ *                           nullable: true
+ *                           example: 10
+ *                         startDate:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                           example: null
+ *                         endDate:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                           example: null
+ *                         maxTravellersScheduled:
+ *                           type: number
+ *                           nullable: true
+ *                           example: null
+ *                     hostDetails:
+ *                       type: object
+ *                       properties:
+ *                         locationType:
+ *                           type: string
+ *                           enum: [Pickup and Dropoff, Pickup Only, Drop Only, None]
+ *                           nullable: true
+ *                           example: "Pickup and Dropoff"
+ *                         pickupLocation:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "Alleppey Boat Jetty"
+ *                         pickupGoogleMapLink:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "https://maps.google.com/..."
+ *                         dropOffLocation:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "Alleppey Boat Jetty"
+ *                         dropOffGoogleMapLink:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "https://maps.google.com/..."
+ *                         hostName:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "John Doe"
+ *                         hostDescription:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "Experienced host with 5 years in tourism."
+ *                     pricingDetails:
+ *                       type: object
+ *                       properties:
+ *                         pricingType:
+ *                           type: string
+ *                           enum: [Per Day, Per Person]
+ *                           nullable: true
+ *                           example: "Per Person"
+ *                         amount:
+ *                           type: number
+ *                           example: 5000
+ *                         discount:
+ *                           type: number
+ *                           example: 500
+ *                         platformFee:
+ *                           type: number
+ *                           example: 250
+ *                         totalPrice:
+ *                           type: number
+ *                           example: 4750
+ *                         priceBreakdown:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               label:
+ *                                 type: string
+ *                                 example: "Base Amount"
+ *                               value:
+ *                                 type: number
+ *                                 example: 5000
+ *                           example:
+ *                             - label: "Base Amount"
+ *                               value: 5000
+ *                             - label: "Discount"
+ *                               value: -500
+ *                             - label: "Platform Fee"
+ *                               value: 250
+ *                             - label: "Total"
+ *                               value: 4750
+ *                     storyImages:
+ *                       type: object
+ *                       properties:
+ *                         bannerImage:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             key:
+ *                               type: string
+ *                               example: "stories/story-id/banner/image.jpg"
+ *                             url:
+ *                               type: string
+ *                               example: "https://bucket.s3.region.amazonaws.com/stories/story-id/banner/image.jpg"
+ *                         storyImage:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             key:
+ *                               type: string
+ *                             url:
+ *                               type: string
+ *                         otherImages:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               key:
+ *                                 type: string
+ *                               url:
+ *                                 type: string
+ *                     timing:
+ *                       type: object
+ *                       properties:
+ *                         pickUpTime:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "09:00 AM"
+ *                         dropOffTime:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "05:00 PM"
+ *                         pickUpTimeRaw:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                         dropOffTimeRaw:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                     itinerary:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           day:
+ *                             type: number
+ *                             example: 1
+ *                           activities:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 type:
+ *                                   type: string
+ *                                   example: "Sightseeing"
+ *                                 activityName:
+ *                                   type: string
+ *                                   example: "Boat Ride"
+ *                                 activityDescription:
+ *                                   type: string
+ *                                   example: "Cruise through the backwaters"
+ *                                 activityTime:
+ *                                   type: string
+ *                                   example: "10:00 AM"
+ *                                 activityDuration:
+ *                                   type: string
+ *                                   example: "3 hours"
+ *                                 activityLocation:
+ *                                   type: string
+ *                                   example: "Alleppey Backwaters"
+ *       400:
+ *         description: Bad request - Story ID missing
+ *       404:
+ *         description: Story not found
+ *       401:
+ *         description: Unauthorized - Missing or invalid authentication token
+ *       403:
+ *         description: Forbidden - User does not have admin role
+ *       500:
+ *         description: Internal server error
  */
