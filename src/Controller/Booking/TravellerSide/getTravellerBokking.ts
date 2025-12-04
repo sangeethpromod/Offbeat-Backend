@@ -124,6 +124,7 @@ export const getTravellerBookingsSimple = async (
             ],
           },
           totalTravellers: '$noOfTravellers',
+          bookingStatus: 1, // Include booking status
         },
       },
 

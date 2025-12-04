@@ -94,6 +94,7 @@ export const getTravellerBookings = async (
           endDate: booking.endDate,
         },
         totalNoOfTravellers: booking.totalTravellers,
+        bookingStatus: booking.bookingStatus, // Include booking status
       };
 
       // Check if booking is upcoming or past

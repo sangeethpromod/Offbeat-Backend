@@ -13,6 +13,7 @@ import { getBookingDetails } from '../Controller/Booking/HostSide/bookingDetails
 import { searchStories } from '../Controller/Booking/TravellerSide/searchApiController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdminOrHost } from '../Middleware/roleAuth';
+import { rejectBooking } from '../Controller/Booking/HostSide/bookingRejectionController';
 
 const bookingRoutes = Router();
 
@@ -34,6 +35,9 @@ bookingRoutes.post('/analytics/travel-with-stars', getTravelWithStarsAnalytics);
 
 // GET /api/bookings/details/:bookingId - Get booking details summary (Admin/Host only)
 bookingRoutes.get('/details/:bookingId', requireAdminOrHost, getBookingDetails);
+
+// PATCH /api/bookings/reject/:bookingId - Reject a booking (Host only)
+bookingRoutes.patch('/reject/:bookingId', rejectBooking);
 
 /**
  * Traveller APIs

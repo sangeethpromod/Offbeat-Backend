@@ -341,6 +341,7 @@ export const createBooking = async (
         travellers,
         paymentDetails: processedPaymentDetails,
         status: 'confirmed',
+        bookingStatus: 'success', // Set booking status to success
       });
 
       await booking.save({ session });

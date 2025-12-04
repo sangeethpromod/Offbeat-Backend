@@ -24,6 +24,7 @@ export interface IBooking extends Document {
   travellers: Traveller[];
   paymentDetails: PaymentDetail[];
   status: 'confirmed' | 'cancelled';
+  bookingStatus: 'success' | 'rejected' | 'pending'; // New field for booking status
   totalTravellers: number; // Virtual field (same as noOfTravellers)
   createdAt: Date;
   updatedAt: Date;
@@ -93,6 +94,12 @@ const BookingSchema = new Schema<IBooking>(
       type: String,
       enum: ['confirmed', 'cancelled'],
       default: 'confirmed',
+      required: true,
+    },
+    bookingStatus: {
+      type: String,
+      enum: ['success', 'rejected', 'pending'],
+      default: 'success',
       required: true,
     },
   },

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getHostList } from '../Controller/Admin/hostKPIController';
 import { getTravellerList } from '../Controller/Admin/travellerKPIController';
+import { getStoryList } from '../Controller/Admin/storyKPIController';
 import {
   blockTraveller,
   unblockTraveller,
@@ -37,6 +38,9 @@ adminRoutes.post('/hosts', getHostList);
 
 // Retrieves paginated traveller list with filters & sorting.
 adminRoutes.post('/travellers', getTravellerList);
+
+// Retrieves paginated story list with filters & sorting.
+adminRoutes.post('/stories', getStoryList);
 
 // -------------------------------------------------------
 // ✅ HOST APPROVAL WORKFLOW

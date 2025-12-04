@@ -6,6 +6,7 @@ interface TravellerListRequest {
   limit?: number;
   sort?: 'A-Z' | 'Z-A' | 'DateJoined';
   status?: 'ALL' | 'ACTIVE' | 'BLOCKED';
+  search?: string;
 }
 
 export const getTravellerList = async (
@@ -16,7 +17,7 @@ export const getTravellerList = async (
     const page = Math.max(1, Number(req.body.page) || 1);
     const limit = Math.max(1, Number(req.body.limit) || 10);
     const skip = (page - 1) * limit;
-    const { sort = 'DateJoined', status = 'ALL' } = req.body;
+    const { sort = 'DateJoined', status = 'ALL', search } = req.body;
 
     // Build aggregation pipeline
     const pipeline: any[] = [
@@ -28,7 +29,22 @@ export const getTravellerList = async (
         ? [{ $match: { isActive: status === 'ACTIVE' } }]
         : []),
 
-      // 3. Sort
+      // 3. Search filter - search in fullName, email, phoneNumber
+      ...(search
+        ? [
+            {
+              $match: {
+                $or: [
+                  { fullName: { $regex: search, $options: 'i' } },
+                  { email: { $regex: search, $options: 'i' } },
+                  { phoneNumber: { $regex: search, $options: 'i' } },
+                ],
+              },
+            },
+          ]
+        : []),
+
+      // 4. Sort
       {
         $sort:
           sort === 'A-Z'
@@ -38,7 +54,7 @@ export const getTravellerList = async (
               : { createdAt: -1 }, // Default to DateJoined (newest first)
       },
 
-      // 4. Facet for pagination and data
+      // 5. Facet for pagination and data
       {
         $facet: {
           metadata: [{ $count: 'total' }],
