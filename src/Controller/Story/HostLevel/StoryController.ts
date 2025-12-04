@@ -8,6 +8,7 @@ import Story, {
   ItineraryDay,
 } from '../../../Model/storyModel';
 import s3Service from '../../../Service/s3Service';
+import { calculateStoryFees } from '../../../Utils/feeCalculator';
 
 // STEP 1: Create story (POST /api/stories)
 export const createStory = async (
@@ -355,18 +356,33 @@ export const updateStoryPage3 = async (
       return;
     }
 
-    const platformFee = 50;
     const appliedDiscount = Math.max(0, Number(discount) || 0);
     const base = Math.max(0, Number(amount));
     const totalBeforeFee = Math.max(0, base - appliedDiscount);
-    const totalPrice = totalBeforeFee + platformFee;
 
+    // Calculate fees dynamically from fee structure
+    const { totalFees, feeBreakdown } = await calculateStoryFees(
+      totalBeforeFee,
+      'TRAVELLER'
+    );
+
+    const totalPrice = totalBeforeFee + totalFees;
+
+    // Build price breakdown
     const priceBreakdown = [
       { label: 'Base Price', value: base },
       { label: 'Discount', value: appliedDiscount },
-      { label: 'Platform Fee', value: platformFee },
-      { label: 'Total Price', value: totalPrice },
     ];
+
+    // Add each fee to the breakdown
+    feeBreakdown.forEach(fee => {
+      priceBreakdown.push({
+        label: fee.feeName,
+        value: fee.calculatedAmount,
+      });
+    });
+
+    priceBreakdown.push({ label: 'Total Price', value: totalPrice });
 
     const updated = await Story.findOneAndUpdate(
       { storyId: id },
@@ -374,7 +390,7 @@ export const updateStoryPage3 = async (
         pricingType,
         amount: base,
         discount: appliedDiscount,
-        platformFee,
+        platformFee: totalFees, // Store total fees as platformFee for backward compatibility
         totalPrice,
         priceBreakdown,
         status: 'STEP 3 COMPLETED',

@@ -5,6 +5,7 @@ const { body, validationResult } = expressValidator;
 import Booking from '../../../Model/bookingModel';
 import Story from '../../../Model/storyModel';
 import newrelic from 'newrelic';
+import { calculateStoryFees } from '../../../Utils/feeCalculator';
 
 export interface CreateBookingRequest {
   storyId: string;
@@ -18,9 +19,7 @@ export interface CreateBookingRequest {
   }>;
   paymentDetails: Array<{
     totalBase: number;
-    platformFee?: number;
     discount?: number;
-    totalPayment: number;
   }>;
 }
 
@@ -54,17 +53,10 @@ export const validateBooking = [
   body('paymentDetails.*.totalBase')
     .isFloat({ min: 0 })
     .withMessage('totalBase must be non-negative'),
-  body('paymentDetails.*.platformFee')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('platformFee must be non-negative'),
   body('paymentDetails.*.discount')
     .optional()
     .isFloat({ min: 0 })
     .withMessage('discount must be non-negative'),
-  body('paymentDetails.*.totalPayment')
-    .isFloat({ min: 0 })
-    .withMessage('totalPayment must be non-negative'),
 ];
 
 /**
@@ -315,12 +307,29 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Set default platform fee if not provided
-      const processedPaymentDetails = paymentDetails.map(detail => ({
-        ...detail,
-        platformFee: detail.platformFee ?? 50,
-        discount: detail.discount ?? 0,
-      }));
+      // Calculate fees dynamically for each payment detail
+      const processedPaymentDetails = await Promise.all(
+        paymentDetails.map(async detail => {
+          const baseAmount = detail.totalBase;
+          const discount = detail.discount ?? 0;
+          const amountAfterDiscount = Math.max(0, baseAmount - discount);
+
+          // Calculate fees using the fee structure
+          const { totalFees } = await calculateStoryFees(
+            amountAfterDiscount,
+            'TRAVELLER'
+          );
+
+          const totalPayment = amountAfterDiscount + totalFees;
+
+          return {
+            totalBase: baseAmount,
+            platformFee: totalFees, // Store total fees as platformFee for backward compatibility
+            discount,
+            totalPayment,
+          };
+        })
+      );
 
       // Create booking with the storyId from the database
       const booking = new Booking({

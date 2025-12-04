@@ -5,7 +5,8 @@ interface HostListRequest {
   page?: number;
   limit?: number;
   sort?: 'A-Z' | 'Z-A' | 'DateJoined';
-  status?: 'ALL' | 'ACTIVE' | 'PENDING' | 'BLOCKED';
+  status?: 'ALL' | 'ACTIVE' | 'PENDING' | 'BLOCKED' | 'REJECTED';
+  search?: string;
 }
 
 export const getHostList = async (
@@ -16,7 +17,10 @@ export const getHostList = async (
     const page = Math.max(1, Number(req.body.page) || 1);
     const limit = Math.max(1, Number(req.body.limit) || 10);
     const skip = (page - 1) * limit;
-    const { sort = 'DateJoined', status = 'ALL' } = req.body;
+    const { sort = 'DateJoined', status = 'ALL', search } = req.body;
+
+    // Map ACTIVE to APPROVED for filtering
+    const filterStatus = status === 'ACTIVE' ? 'APPROVED' : status;
 
     // Build aggregation pipeline
     const pipeline: any[] = [
@@ -42,9 +46,27 @@ export const getHostList = async (
       },
 
       // 4. Filter by status if not ALL
-      ...(status !== 'ALL' ? [{ $match: { 'profile.status': status } }] : []),
+      ...(filterStatus !== 'ALL'
+        ? [{ $match: { 'profile.status': filterStatus } }]
+        : []),
 
-      // 5. Sort
+      // 5. Search filter - search in fullName, email, mobileNumber, hostId
+      ...(search
+        ? [
+            {
+              $match: {
+                $or: [
+                  { fullName: { $regex: search, $options: 'i' } },
+                  { email: { $regex: search, $options: 'i' } },
+                  { 'profile.mobileNumber': { $regex: search, $options: 'i' } },
+                  { 'profile.hostId': { $regex: search, $options: 'i' } },
+                ],
+              },
+            },
+          ]
+        : []),
+
+      // 6. Sort
       {
         $sort:
           sort === 'A-Z'
@@ -54,7 +76,7 @@ export const getHostList = async (
               : { createdAt: -1 }, // Default to DateJoined (newest first)
       },
 
-      // 6. Facet for pagination and data
+      // 7. Facet for pagination and data
       {
         $facet: {
           metadata: [{ $count: 'total' }],
@@ -71,7 +93,13 @@ export const getHostList = async (
                 mobileNumber: '$profile.mobileNumber',
                 nationality: '$profile.nationality',
                 dateJoined: '$createdAt',
-                status: '$profile.status',
+                status: {
+                  $cond: {
+                    if: { $eq: ['$profile.status', 'APPROVED'] },
+                    then: 'ACTIVE',
+                    else: '$profile.status',
+                  },
+                },
                 blockReason: '$profile.blockReason',
                 rejectReason: '$profile.rejectReason',
               },
