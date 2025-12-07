@@ -5,7 +5,10 @@ import {
   registerHostStep2,
   registerHostStep3,
   getHostStatus,
+  updateHostProfile,
+  resetHostPassword,
 } from '../Controller/Host/hostController';
+import { verifyAccessToken } from '../Middleware/tokenManagement';
 
 const router = Router();
 
@@ -31,5 +34,11 @@ router.patch(
 
 // GET /api/host/status/:userId
 router.get('/status/:userId', getHostStatus);
+
+// PATCH /api/host/update-profile - Update host profile details (requires authentication)
+router.patch('/update-profile', verifyAccessToken, updateHostProfile);
+
+// PATCH /api/host/reset-password - Reset password (requires authentication)
+router.patch('/reset-password', verifyAccessToken, resetHostPassword);
 
 export default router;

@@ -16,6 +16,7 @@ import legalRoutes from './Routes/legalRoutes';
 import bookingRoutes from './Routes/booking';
 import travellerRoutes from './Routes/travellerRoutes';
 import adminRoutes from './Routes/adminRoutes';
+import wishlistRoutes from './Routes/wishlistRoutes';
 import { swaggerUi, specs } from './Config/swagger';
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/legal', legalRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/traveller', travellerRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 // Swagger documentation
 app.use(

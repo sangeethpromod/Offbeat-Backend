@@ -11,7 +11,7 @@ import {
   strictRateLimiter,
   createRateLimiter,
   getRateLimiterStats,
-} from '../Middleware/rateLimiter';
+} from './rateLimiter';
 
 const exampleRoutes = Router();
 

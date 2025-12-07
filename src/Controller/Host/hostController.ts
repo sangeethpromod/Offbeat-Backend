@@ -436,3 +436,207 @@ export const getHostStatus = async (
     });
   }
 };
+
+/**
+ * Update host details (excluding images)
+ * PATCH /api/host/update-profile
+ */
+export const updateHostProfile = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = (req as any).jwtUser?.userId;
+    const {
+      fullName,
+      age,
+      gender,
+      mobileNumber,
+      nationality,
+      location,
+      aadharNumber,
+    } = req.body;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+      return;
+    }
+
+    // Find the user
+    const user = await AuthUser.findOne({ userId });
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Find the host profile
+    const hostProfile = await HostProfile.findOne({ userId });
+    if (!hostProfile) {
+      res.status(404).json({
+        success: false,
+        message: 'Host profile not found',
+      });
+      return;
+    }
+
+    // Build update object for AuthUser
+    const userUpdates: any = {};
+    if (fullName) userUpdates.fullName = fullName;
+
+    // Build update object for HostProfile
+    const profileUpdates: any = {};
+    if (age !== undefined) profileUpdates.age = age;
+    if (gender) profileUpdates.gender = gender;
+    if (mobileNumber) profileUpdates.mobileNumber = mobileNumber;
+    if (nationality) profileUpdates.nationality = nationality;
+    if (location) profileUpdates.location = location;
+    if (aadharNumber) profileUpdates.aadharNumber = aadharNumber;
+
+    // Update AuthUser if there are changes
+    if (Object.keys(userUpdates).length > 0) {
+      await AuthUser.findOneAndUpdate({ userId }, userUpdates, { new: true });
+    }
+
+    // Update HostProfile if there are changes
+    let updatedProfile = hostProfile;
+    if (Object.keys(profileUpdates).length > 0) {
+      updatedProfile = (await HostProfile.findOneAndUpdate(
+        { userId },
+        profileUpdates,
+        { new: true }
+      ))!;
+    }
+
+    // Get updated user data
+    const updatedUser = await AuthUser.findOne({ userId });
+
+    res.status(200).json({
+      success: true,
+      message: 'Host profile updated successfully',
+      data: {
+        userId: updatedUser!.userId,
+        fullName: updatedUser!.fullName,
+        email: updatedUser!.email,
+        age: updatedProfile.age,
+        gender: updatedProfile.gender,
+        mobileNumber: updatedProfile.mobileNumber,
+        nationality: updatedProfile.nationality,
+        location: updatedProfile.location,
+        aadharNumber: updatedProfile.aadharNumber,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating host profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Reset password
+ * PATCH /api/host/reset-password
+ */
+export const resetHostPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = (req as any).jwtUser?.userId;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!oldPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Old password and new password are required',
+      });
+      return;
+    }
+
+    // Validate new password length
+    if (newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long',
+      });
+      return;
+    }
+
+    // Find the user
+    const user = await AuthUser.findOne({ userId });
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Check if user has a password
+    if (!user.password) {
+      res.status(400).json({
+        success: false,
+        message: 'No password set for this account',
+      });
+      return;
+    }
+
+    // Verify old password
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      res.status(400).json({
+        success: false,
+        message: 'Old password is incorrect',
+      });
+      return;
+    }
+
+    // Check if new password is same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      res.status(400).json({
+        success: false,
+        message: 'New password cannot be the same as old password',
+      });
+      return;
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    await AuthUser.findOneAndUpdate(
+      { userId },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
