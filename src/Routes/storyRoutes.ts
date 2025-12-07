@@ -11,6 +11,7 @@ import {
   adminApproveStory,
 } from '../Controller/Story/HostLevel/StoryController';
 import { getStoriesByUser } from '../Controller/Story/HostLevel/getStoryController';
+import { getStoryDetailsForTraveller } from '../Controller/Story/TravellerLevel/getStoryDetails';
 import upload from '../Utils/multerConfig';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 
@@ -50,6 +51,9 @@ storyRoutes.patch('/create-story/:id/approve', adminApproveStory);
 
 // GET /api/stories/my-stories - Get all stories created by the authenticated user
 storyRoutes.get('/my-stories', getStoriesByUser);
+
+// GET /api/stories/traveller/details/:storyId - Get comprehensive story details for travellers
+storyRoutes.get('/traveller/details/:storyId', getStoryDetailsForTraveller);
 
 // UPDATE: PUT /api/stories/:id - Update basic story information
 storyRoutes.put('/update-story/:id', updateStory);

@@ -21,7 +21,7 @@ export const getTravellerBookings = async (
       return;
     }
 
-    // Check if user has Traveller role
+    // Check if user has Host role
     if (role !== 'host') {
       res.status(403).json({
         success: false,

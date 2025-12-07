@@ -14,6 +14,8 @@ interface PlaceInput {
 interface SearchFilters {
   tags?: string[];
   availabilityType?: 'YEAR_ROUND' | 'TRAVEL_WITH_STARS';
+  budgetMin?: number;
+  budgetMax?: number;
 }
 
 interface SearchRequestBody {
@@ -22,6 +24,7 @@ interface SearchRequestBody {
   totalPeople: number;
   filters?: SearchFilters;
   limit?: number;
+  sortBy?: 'price_low_to_high' | 'price_high_to_low' | 'relevance';
 }
 
 /**
@@ -96,6 +99,7 @@ export const searchStories = async (
       totalPeople,
       filters,
       limit = 20,
+      sortBy = 'relevance',
     } = req.body as SearchRequestBody;
 
     // Step 1: Validate input
@@ -388,18 +392,39 @@ export const searchStories = async (
       })
       .filter(result => result !== null); // Remove unavailable stories
 
-    // Step 6: Sort by final score descending
-    scoredResults.sort((a, b) => b!.finalScore - a!.finalScore);
+    // Step 5.5: Apply budget filter if provided
+    let filteredResults = scoredResults;
+    if (filters?.budgetMin !== undefined || filters?.budgetMax !== undefined) {
+      filteredResults = scoredResults.filter(result => {
+        if (!result) return false;
+        const price = result.calculatedTotal;
+
+        const minBudget = filters.budgetMin ?? 0;
+        const maxBudget = filters.budgetMax ?? Infinity;
+
+        return price >= minBudget && price <= maxBudget;
+      });
+    }
+
+    // Step 6: Sort by final score or price
+    if (sortBy === 'price_low_to_high') {
+      filteredResults.sort((a, b) => a!.calculatedTotal - b!.calculatedTotal);
+    } else if (sortBy === 'price_high_to_low') {
+      filteredResults.sort((a, b) => b!.calculatedTotal - a!.calculatedTotal);
+    } else {
+      // Default: sort by relevance (final score)
+      filteredResults.sort((a, b) => b!.finalScore - a!.finalScore);
+    }
 
     // Step 6b: If we still don't have enough results, get any available stories from the same state
-    if (scoredResults.length < 10 && place.state) {
+    if (filteredResults.length < 10 && place.state) {
       const fallbackQuery: any = {
         status: 'APPROVED',
         'locationDetails.state': { $regex: new RegExp(place.state, 'i') },
       };
 
       // Exclude already found stories
-      const foundStoryIds = scoredResults.map(r => r!.storyId);
+      const foundStoryIds = filteredResults.map(r => r!.storyId);
       if (foundStoryIds.length > 0) {
         fallbackQuery.storyId = { $nin: foundStoryIds };
       }
@@ -462,6 +487,19 @@ export const searchStories = async (
             formattedAmount = `${displayAmount}/per day`;
           }
 
+          // Apply budget filter to fallback results
+          if (
+            filters?.budgetMin !== undefined ||
+            filters?.budgetMax !== undefined
+          ) {
+            const minBudget = filters.budgetMin ?? 0;
+            const maxBudget = filters.budgetMax ?? Infinity;
+
+            if (calculatedTotal < minBudget || calculatedTotal > maxBudget) {
+              return null;
+            }
+          }
+
           const monthName = getMonthName(searchDate);
           const priceNote = `This price is lower than the average price in ${monthName}`;
 
@@ -483,11 +521,20 @@ export const searchStories = async (
         .filter(result => result !== null);
 
       // Add fallback results to main results
-      scoredResults.push(...fallbackResults);
+      filteredResults.push(...fallbackResults);
+
+      // Re-sort after adding fallback results
+      if (sortBy === 'price_low_to_high') {
+        filteredResults.sort((a, b) => a!.calculatedTotal - b!.calculatedTotal);
+      } else if (sortBy === 'price_high_to_low') {
+        filteredResults.sort((a, b) => b!.calculatedTotal - a!.calculatedTotal);
+      } else {
+        filteredResults.sort((a, b) => b!.finalScore - a!.finalScore);
+      }
     }
 
     // Apply limit
-    const limitedResults = scoredResults.slice(0, limit);
+    const limitedResults = filteredResults.slice(0, limit);
 
     res.status(200).json({
       success: true,

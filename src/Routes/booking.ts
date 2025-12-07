@@ -14,6 +14,7 @@ import { searchStories } from '../Controller/Booking/TravellerSide/searchApiCont
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdminOrHost } from '../Middleware/roleAuth';
 import { rejectBooking } from '../Controller/Booking/HostSide/bookingRejectionController';
+import { strictRateLimiter, rateLimiter } from '../Middleware/rateLimiter';
 
 const bookingRoutes = Router();
 
@@ -44,10 +45,17 @@ bookingRoutes.patch('/reject/:bookingId', rejectBooking);
  */
 
 // POST /api/bookings/search - Search for stories by location, date, and capacity
-bookingRoutes.post('/search', searchStories);
+// Apply strict rate limiting to prevent abuse
+bookingRoutes.post('/search', strictRateLimiter, searchStories);
 
 // POST /api/bookings - Create a new booking
-bookingRoutes.post('/create-booking', validateBooking, createBooking);
+// Apply rate limiting to prevent spam bookings
+bookingRoutes.post(
+  '/create-booking',
+  rateLimiter,
+  validateBooking,
+  createBooking
+);
 
 // GET /api/bookings/my-bookings - Get traveller's bookings with simplified details
 bookingRoutes.get('/traveller/my-bookings', getTravellerBookingsSimple);
