@@ -90,6 +90,10 @@ const HostProfileSchema: Schema = new Schema(
       trim: true,
       default: null,
     },
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

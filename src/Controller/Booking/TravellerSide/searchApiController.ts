@@ -364,10 +364,8 @@ export const searchStories = async (
           calculatedTotal = totalPeople * (story.amount || 0);
           formattedAmount = `${displayAmount}/per person`;
         } else if (story.pricingType === 'Per Day') {
-          // For Per Day: totalPrice is the price per day for the whole group
-          // Use totalPrice if available, otherwise use amount
-          displayAmount = story.totalPrice || story.amount || 0;
-          calculatedTotal = displayAmount; // Total is just the per-day price (not multiplied by people)
+          // For Per Day: amount is per day, multiply by storyLength
+          calculatedTotal = (story.storyLength || 1) * (story.amount || 0);
           formattedAmount = `${displayAmount}/per day`;
         }
 
@@ -382,7 +380,6 @@ export const searchStories = async (
           tags: story.tags,
           pricingType: story.pricingType,
           amount: formattedAmount,
-          totalPrice: story.totalPrice,
           storyLength: story.storyLength,
           finalScore,
           isAvailable,
@@ -481,9 +478,8 @@ export const searchStories = async (
             calculatedTotal = totalPeople * (story.amount || 0);
             formattedAmount = `${displayAmount}/per person`;
           } else if (story.pricingType === 'Per Day') {
-            // For Per Day: totalPrice is the price per day for the whole group
-            displayAmount = story.totalPrice || story.amount || 0;
-            calculatedTotal = displayAmount; // Total is just the per-day price
+            // For Per Day: amount is per day, multiply by storyLength
+            calculatedTotal = (story.storyLength || 1) * (story.amount || 0);
             formattedAmount = `${displayAmount}/per day`;
           }
 
@@ -510,7 +506,6 @@ export const searchStories = async (
             tags: story.tags,
             pricingType: story.pricingType,
             amount: formattedAmount,
-            totalPrice: story.totalPrice,
             storyLength: story.storyLength,
             finalScore,
             isAvailable,

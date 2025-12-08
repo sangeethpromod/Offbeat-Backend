@@ -18,8 +18,8 @@ wishlistRoutes.use(verifyAccessToken);
 // POST /api/wishlist/add - Add a story to wishlist
 wishlistRoutes.post('/add', addToWishlist);
 
-// GET /api/wishlist - Get user's wishlist with story details
-wishlistRoutes.get('/', getWishlist);
+// GET /api/wishlist/get-wishlist - Get user's wishlist with story details
+wishlistRoutes.get('/get-wishlist', getWishlist);
 
 // DELETE /api/wishlist/remove - Remove a story from wishlist
 wishlistRoutes.delete('/remove', removeFromWishlist);

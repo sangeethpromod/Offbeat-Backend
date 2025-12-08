@@ -5,7 +5,7 @@ interface StoryListRequest {
   page?: number;
   limit?: number;
   sort?: 'A-Z' | 'Z-A' | 'Price';
-  status?: 'ALL' | 'ACTIVE' | 'PENDING' | 'BLOCKED';
+  status?: 'ALL' | 'ACTIVE' | 'PENDING' | 'BLOCKED' | 'REJECTED';
   storyType?: 'ALL' | 'YEAR_ROUND' | 'TRAVEL_WITH_STARS';
   search?: string;
 }
@@ -121,6 +121,7 @@ export const getStoryList = async (
             {
               $project: {
                 _id: 0,
+                storyId: '$storyId',
                 storyName: '$storyTitle',
                 hostName: '$hostInfo.fullName',
                 storyType: '$availabilityType',
@@ -138,7 +139,13 @@ export const getStoryList = async (
                           $cond: {
                             if: { $eq: ['$status', 'PENDING'] },
                             then: 'PENDING',
-                            else: '$status',
+                            else: {
+                              $cond: {
+                                if: { $eq: ['$status', 'REJECTED'] },
+                                then: 'REJECTED',
+                                else: '$status',
+                              },
+                            },
                           },
                         },
                       },

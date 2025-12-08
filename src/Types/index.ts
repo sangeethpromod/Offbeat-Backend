@@ -45,6 +45,7 @@ export interface IHostProfile extends Document {
   status: 'PENDING' | 'APPROVED' | 'BLOCKED' | 'REJECTED';
   blockReason?: string | null; // Reason for blocking the host
   rejectReason?: string | null; // Reason for rejecting the host
+  rejectedAt?: Date | null; // Timestamp when host was rejected
   createdAt: Date;
   updatedAt: Date;
 }

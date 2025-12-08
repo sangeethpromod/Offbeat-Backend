@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { generateTokens } from '../../Middleware/tokenManagement';
 import { auth } from '../../Config/firebase';
 import AuthUser from '../../Model/authModel';
+import HostProfile from '../../Model/hostModel';
 import Role from '../../Model/roleModel';
 import {
   RegisterUserRequest,
@@ -174,6 +175,55 @@ export const login = async (
         message: 'Invalid email or password',
       });
       return;
+    }
+
+    // Check host status if user is a host
+    if (user.role === 'host') {
+      const hostProfile = await HostProfile.findOne({ userId: user.userId });
+      if (hostProfile) {
+        if (hostProfile.status === 'BLOCKED') {
+          res.status(403).json({
+            success: false,
+            message:
+              'You are blocked due to not following our guidelines. Please contact support.',
+          });
+          return;
+        }
+
+        if (hostProfile.status === 'REJECTED') {
+          const rejectedAt = hostProfile.rejectedAt;
+          if (rejectedAt) {
+            const tenDaysInMs = 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
+            const now = Date.now();
+            const timeSinceRejection = now - rejectedAt.getTime();
+
+            if (timeSinceRejection < tenDaysInMs) {
+              const remainingDays = Math.ceil(
+                (tenDaysInMs - timeSinceRejection) / (24 * 60 * 60 * 1000)
+              );
+              res.status(403).json({
+                success: false,
+                message: `You cannot login with this ID for ${remainingDays} more days due to rejection.`,
+              });
+              return;
+            } else {
+              // More than 10 days have passed, allow login and reset status to PENDING
+              hostProfile.status = 'PENDING';
+              hostProfile.rejectReason = null;
+              hostProfile.rejectedAt = null;
+              await hostProfile.save();
+            }
+          } else {
+            // No rejectedAt timestamp, treat as still rejected
+            res.status(403).json({
+              success: false,
+              message:
+                'You cannot login with this ID for 10 days due to rejection.',
+            });
+            return;
+          }
+        }
+      }
     }
 
     // Check if user has a password (hosts might not have password until step 2)
@@ -388,6 +438,55 @@ export const googleLogin = async (
       });
 
       await user.save();
+    }
+
+    // Check host status if user is a host
+    if (user.role === 'host') {
+      const hostProfile = await HostProfile.findOne({ userId: user.userId });
+      if (hostProfile) {
+        if (hostProfile.status === 'BLOCKED') {
+          res.status(403).json({
+            success: false,
+            message:
+              'You are blocked due to not following our guidelines. Please contact support.',
+          });
+          return;
+        }
+
+        if (hostProfile.status === 'REJECTED') {
+          const rejectedAt = hostProfile.rejectedAt;
+          if (rejectedAt) {
+            const tenDaysInMs = 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
+            const now = Date.now();
+            const timeSinceRejection = now - rejectedAt.getTime();
+
+            if (timeSinceRejection < tenDaysInMs) {
+              const remainingDays = Math.ceil(
+                (tenDaysInMs - timeSinceRejection) / (24 * 60 * 60 * 1000)
+              );
+              res.status(403).json({
+                success: false,
+                message: `You cannot login with this ID for ${remainingDays} more days due to rejection.`,
+              });
+              return;
+            } else {
+              // More than 10 days have passed, allow login and reset status to PENDING
+              hostProfile.status = 'PENDING';
+              hostProfile.rejectReason = null;
+              hostProfile.rejectedAt = null;
+              await hostProfile.save();
+            }
+          } else {
+            // No rejectedAt timestamp, treat as still rejected
+            res.status(403).json({
+              success: false,
+              message:
+                'You cannot login with this ID for 10 days due to rejection.',
+            });
+            return;
+          }
+        }
+      }
     }
 
     // Generate JWT token for our app

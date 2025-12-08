@@ -6,6 +6,11 @@ interface BlockStoryRequest {
   blockReason: string;
 }
 
+interface RejectStoryRequest {
+  storyId: string;
+  rejectedReason: string;
+}
+
 interface UnblockStoryRequest {
   storyId: string;
 }
@@ -154,6 +159,86 @@ export const unblockStory = async (
     res.status(500).json({
       success: false,
       message: 'Failed to unblock story',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Reject a story - Change status to REJECTED with a reason
+ */
+export const rejectStory = async (
+  req: Request<{}, {}, RejectStoryRequest>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { storyId, rejectedReason } = req.body;
+
+    if (!storyId) {
+      res.status(400).json({
+        success: false,
+        message: 'storyId is required',
+      });
+      return;
+    }
+
+    if (!rejectedReason || rejectedReason.trim().length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'rejectedReason is required',
+      });
+      return;
+    }
+
+    // Find the story
+    const story = await Story.findOne({ storyId });
+
+    if (!story) {
+      res.status(404).json({
+        success: false,
+        message: 'Story not found',
+      });
+      return;
+    }
+
+    // Check if story is already rejected
+    if (story.status === 'REJECTED') {
+      res.status(400).json({
+        success: false,
+        message: 'Story is already rejected',
+        data: {
+          rejectedReason: story.rejectedReason,
+        },
+      });
+      return;
+    }
+
+    // Update status to REJECTED and save reason
+    story.status = 'REJECTED';
+    story.rejectedReason = rejectedReason.trim();
+    await story.save();
+
+    console.log(
+      `Story ${storyId} rejected by admin. Reason: ${rejectedReason}`
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Story rejected successfully',
+      data: {
+        storyId: story.storyId,
+        storyTitle: story.storyTitle,
+        createdBy: story.createdBy,
+        status: story.status,
+        rejectedReason: story.rejectedReason,
+        rejectedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error rejecting story:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reject story',
       error: error.message,
     });
   }

@@ -24,7 +24,7 @@ const exampleRoutes = Router();
 // - 60 requests/min per IP
 // - 5 requests/sec burst per IP
 
-exampleRoutes.post('/api/bookings/create', rateLimiter, (req, res) => {
+exampleRoutes.post('/api/bookings/create', rateLimiter, (_req, res) => {
   res.json({ success: true, message: 'Booking created' });
 });
 
@@ -37,7 +37,7 @@ exampleRoutes.post('/api/bookings/create', rateLimiter, (req, res) => {
 // - 30 requests/min per IP
 // - 3 requests/sec burst per IP
 
-exampleRoutes.post('/api/bookings/search', strictRateLimiter, (req, res) => {
+exampleRoutes.post('/api/bookings/search', strictRateLimiter, (_req, res) => {
   res.json({ success: true, results: [] });
 });
 
@@ -52,7 +52,7 @@ const adminRateLimiter = createRateLimiter({
   perIpPerSecond: 20,
 });
 
-exampleRoutes.post('/api/admin/approve', adminRateLimiter, (req, res) => {
+exampleRoutes.post('/api/admin/approve', adminRateLimiter, (_req, res) => {
   res.json({ success: true, message: 'Approved' });
 });
 
@@ -71,7 +71,7 @@ const expensiveOperationLimiter = createRateLimiter({
 exampleRoutes.post(
   '/api/reports/generate',
   expensiveOperationLimiter,
-  (req, res) => {
+  (_req, res) => {
     res.json({ success: true, message: 'Report generation started' });
   }
 );
@@ -79,7 +79,7 @@ exampleRoutes.post(
 // ============================================================
 // EXAMPLE 5: Monitoring endpoint (no rate limiting)
 // ============================================================
-exampleRoutes.get('/api/monitoring/rate-limiter-stats', (req, res) => {
+exampleRoutes.get('/api/monitoring/rate-limiter-stats', (_req, res) => {
   const stats = getRateLimiterStats();
   res.json({
     success: true,
@@ -93,11 +93,11 @@ exampleRoutes.get('/api/monitoring/rate-limiter-stats', (req, res) => {
 const protectedRoutes = Router();
 protectedRoutes.use(rateLimiter); // Apply to all routes in this router
 
-protectedRoutes.get('/api/profile', (req, res) => {
+protectedRoutes.get('/api/profile', (_req, res) => {
   res.json({ success: true, profile: {} });
 });
 
-protectedRoutes.post('/api/settings', (req, res) => {
+protectedRoutes.post('/api/settings', (_req, res) => {
   res.json({ success: true, message: 'Settings updated' });
 });
 
