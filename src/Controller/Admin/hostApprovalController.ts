@@ -296,6 +296,7 @@ export const rejectHost = async (
     // Update status to REJECTED and save reason
     hostProfile.status = 'REJECTED';
     hostProfile.rejectReason = rejectReason.trim();
+    hostProfile.rejectedAt = new Date();
     await hostProfile.save();
 
     console.log(`Host ${hostId} rejected by admin. Reason: ${rejectReason}`);
