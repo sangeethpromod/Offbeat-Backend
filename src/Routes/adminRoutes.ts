@@ -18,10 +18,12 @@ import {
   blockHost,
   unblockHost,
   rejectHost,
+  deleteHost,
 } from '../Controller/Admin/hostApprovalController';
 import {
   blockStory,
   unblockStory,
+  rejectStory,
 } from '../Controller/Admin/storyApprovalController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdmin } from '../Middleware/roleAuth';
@@ -75,6 +77,9 @@ adminRoutes.patch('/hosts/unblock', unblockHost);
 // Action: Reject a host + record reason (only from PENDING)
 adminRoutes.patch('/hosts/reject', rejectHost);
 
+// Action: Delete a host (set isActive to false)
+adminRoutes.patch('/hosts/delete', deleteHost);
+
 // -------------------------------------------------------
 //  TRAVELLER MANAGEMENT
 // -------------------------------------------------------
@@ -103,5 +108,8 @@ adminRoutes.patch('/stories/block', blockStory);
 
 // Action: Unblock a story (returns to APPROVED)
 adminRoutes.patch('/stories/unblock', unblockStory);
+
+// Action: Reject a story + record reason
+adminRoutes.patch('/stories/reject', rejectStory);
 
 export default adminRoutes;

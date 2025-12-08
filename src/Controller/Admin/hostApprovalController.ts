@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import HostProfile from '../../Model/hostModel';
+import AuthUser from '../../Model/authModel';
 
 interface ApproveHostRequest {
   hostId: string;
@@ -17,6 +18,10 @@ interface UnblockHostRequest {
 interface RejectHostRequest {
   hostId: string;
   rejectReason: string;
+}
+
+interface DeleteHostRequest {
+  hostId: string;
 }
 
 /**
@@ -311,6 +316,86 @@ export const rejectHost = async (
     res.status(500).json({
       success: false,
       message: 'Failed to reject host',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Delete a host - Set isActive to false in AuthUser model
+ */
+export const deleteHost = async (
+  req: Request<{}, {}, DeleteHostRequest>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hostId } = req.body;
+
+    if (!hostId) {
+      res.status(400).json({
+        success: false,
+        message: 'hostId is required',
+      });
+      return;
+    }
+
+    // Find the host profile
+    const hostProfile = await HostProfile.findOne({ hostId });
+
+    if (!hostProfile) {
+      res.status(404).json({
+        success: false,
+        message: 'Host not found',
+      });
+      return;
+    }
+
+    // Find the auth user by userId from host profile
+    const authUser = await AuthUser.findOne({ userId: hostProfile.userId });
+
+    if (!authUser) {
+      res.status(404).json({
+        success: false,
+        message: 'Auth user not found for this host',
+      });
+      return;
+    }
+
+    // Check if already inactive
+    if (!authUser.isActive) {
+      res.status(400).json({
+        success: false,
+        message: 'Host is already inactive',
+        data: {
+          hostId: hostProfile.hostId,
+          userId: authUser.userId,
+          isActive: authUser.isActive,
+        },
+      });
+      return;
+    }
+
+    // Set isActive to false
+    authUser.isActive = false;
+    await authUser.save();
+
+    console.log(`Host ${hostId} deleted (isActive set to false) by admin`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Host deleted successfully',
+      data: {
+        hostId: hostProfile.hostId,
+        userId: authUser.userId,
+        isActive: authUser.isActive,
+        deletedAt: new Date(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error deleting host:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete host',
       error: error.message,
     });
   }

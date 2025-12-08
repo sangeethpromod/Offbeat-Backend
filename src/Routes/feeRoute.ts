@@ -3,6 +3,8 @@ import {
   createFee,
   getAllFees,
   updateFee,
+  getFeeById,
+  deleteFee,
 } from '../Controller/Fees/feeController';
 
 // Note: This router is mounted at /api/fees in app.ts
@@ -12,9 +14,15 @@ const router = express.Router();
 router.post('/', createFee);
 
 // GET /api/fees
-router.get('/', getAllFees);
+router.get('/get-all-fees', getAllFees);
 
-// PATCH /api/fees/:feeId
-router.patch('/:feeId', updateFee);
+// GET /api/fees/:feeId
+router.get('/:feeId', getFeeById);
+
+// DELETE /api/fees/:feeId
+router.delete('/:feeId', deleteFee);
+
+// PATCH /api/fees/update/:feeId
+router.patch('/update/:feeId', updateFee);
 
 export default router;

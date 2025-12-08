@@ -259,3 +259,84 @@ export const updateFee = async (
     });
   }
 };
+
+/**
+ * GET /api/fees/:feeId - Get a fee by feeId
+ */
+export const getFeeById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { feeId } = req.params;
+
+    if (!feeId) {
+      res.status(400).json({
+        success: false,
+        message: 'feeId parameter is required',
+      });
+      return;
+    }
+
+    const fee = await FeeStructure.findOne({ feeId });
+
+    if (!fee) {
+      res.status(404).json({
+        success: false,
+        message: 'Fee not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Fee retrieved successfully',
+      data: fee,
+    });
+  } catch (error: any) {
+    console.error('Error fetching fee:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+/**
+ * DELETE /api/fees/:feeId - Delete a fee by feeId
+ */
+export const deleteFee = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { feeId } = req.params;
+
+    if (!feeId) {
+      res.status(400).json({
+        success: false,
+        message: 'feeId parameter is required',
+      });
+      return;
+    }
+
+    const deletedFee = await FeeStructure.findOneAndDelete({ feeId });
+
+    if (!deletedFee) {
+      res.status(404).json({
+        success: false,
+        message: 'Fee not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Fee deleted successfully',
+      data: deletedFee,
+    });
+  } catch (error: any) {
+    console.error('Error deleting fee:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
