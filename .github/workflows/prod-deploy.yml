@@ -21,7 +21,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: YOUR_USERNAME/offbeat-backend:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/offbeat-backend:latest
       
       # DEPLOY TO SERVER (SSH)
       - name: Deploy to Server
