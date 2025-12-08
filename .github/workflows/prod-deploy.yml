@@ -20,8 +20,11 @@ jobs:
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
+          build-args: |
+            SERVICE_ACCOUNT_JSON=${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/offbeat-backend:latest
+
       
       # DEPLOY TO SERVER (SSH)
       - name: Run deploy.sh on remote server
