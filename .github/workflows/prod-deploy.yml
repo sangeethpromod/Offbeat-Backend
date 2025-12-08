@@ -1,7 +1,7 @@
 name: Build & Deploy
 on:
   push:
-    branches: ['pipeline-fix']
+    branches: ['main']
   workflow_dispatch:
 
 jobs:
