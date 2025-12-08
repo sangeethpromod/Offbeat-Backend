@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY package*.json ./
 RUN npm install
+ARG SERVICE_ACCOUNT_JSON
+RUN echo $SERVICE_ACCOUNT_JSON > /app/serviceAccountKey.json
 
 COPY . .
 
