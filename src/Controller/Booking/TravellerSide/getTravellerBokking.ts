@@ -83,9 +83,9 @@ export const getTravellerBookingsSimple = async (
           storyName: '$storyDetails.storyTitle',
           location: '$storyDetails.location',
           state: '$storyDetails.state',
-          // Calculate total payment using $sum instead of array indexing
+          // Calculate total payment using $sum of grandTotal
           totalprice: {
-            $sum: '$paymentDetails.totalPayment',
+            $sum: '$paymentDetails.grandTotal',
           },
           // Format dates in MongoDB using $dateToString
           Dates: {

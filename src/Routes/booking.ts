@@ -14,7 +14,10 @@ import { searchStories } from '../Controller/Booking/TravellerSide/searchApiCont
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdminOrHost } from '../Middleware/roleAuth';
 import { rejectBooking } from '../Controller/Booking/HostSide/bookingRejectionController';
-import { strictRateLimiter, rateLimiter } from '../Middleware/rateLimiter/rateLimiter';
+import {
+  strictRateLimiter,
+  rateLimiter,
+} from '../Middleware/rateLimiter/rateLimiter';
 
 const bookingRoutes = Router();
 

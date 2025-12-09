@@ -7,11 +7,20 @@ export interface Traveller {
   phoneNumber: string;
 }
 
+export interface FeeItem {
+  feeName: string;
+  feeType: 'COMMISSION' | 'FLAT' | 'PERCENTAGE';
+  value: number;
+  calculatedAmount: number;
+}
+
 export interface PaymentDetail {
-  totalBase: number;
-  platformFee: number;
+  baseAmount: number;
   discount: number;
-  totalPayment: number;
+  totalAfterDiscount: number;
+  fees: FeeItem[];
+  totalFees: number;
+  grandTotal: number;
 }
 
 export interface IBooking extends Document {
@@ -39,12 +48,32 @@ const TravellerSchema = new Schema<Traveller>(
   { _id: false }
 );
 
+const FeeItemSchema = new Schema<FeeItem>(
+  {
+    feeName: { type: String, required: true },
+    feeType: {
+      type: String,
+      enum: ['COMMISSION', 'FLAT', 'PERCENTAGE'],
+      required: true,
+    },
+    value: { type: Number, required: true },
+    calculatedAmount: { type: Number, required: true, min: 0 },
+  },
+  { _id: false }
+);
+
 const PaymentDetailSchema = new Schema<PaymentDetail>(
   {
-    totalBase: { type: Number, required: true, min: 0 },
-    platformFee: { type: Number, default: 50, min: 0 },
-    discount: { type: Number, default: 0, min: 0 },
-    totalPayment: { type: Number, required: true, min: 0 },
+    baseAmount: { type: Number, required: true, min: 0 },
+    discount: { type: Number, required: true, min: 0, default: 0 },
+    totalAfterDiscount: { type: Number, required: true, min: 0 },
+    fees: {
+      type: [FeeItemSchema],
+      required: true,
+      default: [],
+    },
+    totalFees: { type: Number, required: true, min: 0, default: 0 },
+    grandTotal: { type: Number, required: true, min: 0 },
   },
   { _id: false }
 );

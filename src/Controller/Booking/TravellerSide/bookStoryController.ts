@@ -18,8 +18,15 @@ export interface CreateBookingRequest {
     phoneNumber: string;
   }>;
   paymentDetails: Array<{
-    totalBase: number;
-    discount?: number;
+    baseAmount: number;
+    discount: number;
+    fees: Array<{
+      feeName: string;
+      feeType: 'COMMISSION' | 'FLAT' | 'PERCENTAGE';
+      value: number;
+      calculatedAmount: number;
+    }>;
+    grandTotal: number;
   }>;
 }
 
@@ -50,13 +57,30 @@ export const validateBooking = [
   body('paymentDetails')
     .isArray({ min: 1 })
     .withMessage('At least one payment detail is required'),
-  body('paymentDetails.*.totalBase')
+  body('paymentDetails.*.baseAmount')
     .isFloat({ min: 0 })
-    .withMessage('totalBase must be non-negative'),
+    .withMessage('baseAmount must be non-negative'),
   body('paymentDetails.*.discount')
-    .optional()
     .isFloat({ min: 0 })
     .withMessage('discount must be non-negative'),
+  body('paymentDetails.*.fees').isArray().withMessage('fees must be an array'),
+  body('paymentDetails.*.fees.*.feeName')
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('Fee name is required'),
+  body('paymentDetails.*.fees.*.feeType')
+    .isIn(['COMMISSION', 'FLAT', 'PERCENTAGE'])
+    .withMessage('feeType must be COMMISSION, FLAT, or PERCENTAGE'),
+  body('paymentDetails.*.fees.*.value')
+    .isFloat({ min: 0 })
+    .withMessage('fee value must be non-negative'),
+  body('paymentDetails.*.fees.*.calculatedAmount')
+    .isFloat({ min: 0 })
+    .withMessage('calculatedAmount must be non-negative'),
+  body('paymentDetails.*.grandTotal')
+    .isFloat({ min: 0 })
+    .withMessage('grandTotal must be non-negative'),
 ];
 
 /**
@@ -307,26 +331,53 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Calculate fees dynamically for each payment detail
+      // Calculate fees dynamically for each payment detail and validate against frontend
       const processedPaymentDetails = await Promise.all(
         paymentDetails.map(async detail => {
-          const baseAmount = detail.totalBase;
-          const discount = detail.discount ?? 0;
-          const amountAfterDiscount = Math.max(0, baseAmount - discount);
+          const baseAmount = detail.baseAmount;
+          const discount = detail.discount;
+          const totalAfterDiscount = Math.max(0, baseAmount - discount);
 
           // Calculate fees using the fee structure
-          const { totalFees } = await calculateStoryFees(
-            amountAfterDiscount,
+          const { totalFees, feeBreakdown } = await calculateStoryFees(
+            totalAfterDiscount,
             'TRAVELLER'
           );
 
-          const totalPayment = amountAfterDiscount + totalFees;
+          const serverGrandTotal = totalAfterDiscount + totalFees;
 
+          // Validate frontend calculations against server calculations
+          const frontendGrandTotal = detail.grandTotal;
+          const frontendTotalFees = detail.fees.reduce(
+            (sum, fee) => sum + fee.calculatedAmount,
+            0
+          );
+
+          // Allow small floating-point differences (0.01)
+          if (Math.abs(serverGrandTotal - frontendGrandTotal) > 0.01) {
+            throw new Error(
+              `Payment mismatch — invalid total provided. Expected ${serverGrandTotal.toFixed(
+                2
+              )}, received ${frontendGrandTotal.toFixed(2)}`
+            );
+          }
+
+          if (Math.abs(totalFees - frontendTotalFees) > 0.01) {
+            throw new Error(
+              `Fee calculation mismatch. Expected total fees ${totalFees.toFixed(
+                2
+              )}, received ${frontendTotalFees.toFixed(2)}`
+            );
+          }
+
+          // Return the validated payment detail with server-calculated values
           return {
-            totalBase: baseAmount,
-            platformFee: totalFees, // Store total fees as platformFee for backward compatibility
+            baseAmount,
             discount,
-            totalPayment,
+            totalAfterDiscount,
+            fees: feeBreakdown,
+            totalFees,
+            grandTotal: serverGrandTotal,
           };
         })
       );
@@ -357,17 +408,25 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Return success response
+      // Return success response with full fee breakdown
       res.status(201).json({
         success: true,
         message: 'Booking created successfully',
         data: {
           bookingId: booking.bookingId,
-          storyId: story.storyId, // Return the storyId from the database
+          storyId: story.storyId,
           startDate: booking.startDate,
           endDate: booking.endDate,
           totalTravellers: booking.totalTravellers,
           status: booking.status,
+          paymentDetails: processedPaymentDetails.map(pd => ({
+            baseAmount: pd.baseAmount,
+            discount: pd.discount,
+            totalAfterDiscount: pd.totalAfterDiscount,
+            fees: pd.fees,
+            totalFees: pd.totalFees,
+            grandTotal: pd.grandTotal,
+          })),
           createdAt: booking.createdAt,
         },
       });

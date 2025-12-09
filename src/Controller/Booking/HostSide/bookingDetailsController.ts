@@ -80,6 +80,7 @@ export const getBookingDetails = async (
     }
 
     // Format the response
+    const paymentDetail = booking.paymentDetails[0];
     const bookingSummary = {
       storyName: storyDetails.storyTitle,
       storyDescription: storyDetails.storyDescription,
@@ -88,10 +89,12 @@ export const getBookingDetails = async (
       Dates: formatDateRange(booking.startDate, booking.endDate),
       phone: booking.travellers[0]?.phoneNumber || '',
       totalTravellers: booking.noOfTravellers,
-      totalBase: booking.paymentDetails[0]?.totalBase || 0,
-      platformFee: booking.paymentDetails[0]?.platformFee || 0,
-      discount: booking.paymentDetails[0]?.discount || 0,
-      totalPayment: booking.paymentDetails[0]?.totalPayment || 0,
+      baseAmount: paymentDetail?.baseAmount || 0,
+      discount: paymentDetail?.discount || 0,
+      totalAfterDiscount: paymentDetail?.totalAfterDiscount || 0,
+      fees: paymentDetail?.fees || [],
+      totalFees: paymentDetail?.totalFees || 0,
+      grandTotal: paymentDetail?.grandTotal || 0,
       travellers: booking.travellers.map((traveller: any) => ({
         travellerName: traveller.fullName,
         travellerEmail: traveller.emailAddress,

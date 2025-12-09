@@ -151,7 +151,7 @@ export const getTravellerDetails = async (
     const totalBookings = bookings.length;
     const totalAmountSpent = bookings.reduce((sum, booking) => {
       const bookingTotal = booking.paymentDetails.reduce(
-        (pSum, payment) => pSum + payment.totalPayment,
+        (pSum, payment) => pSum + payment.grandTotal,
         0
       );
       return sum + bookingTotal;
@@ -194,7 +194,7 @@ export const getTravellerDetails = async (
 
         // Calculate total amount paid for this booking
         const amountPaid = booking.paymentDetails.reduce(
-          (sum, payment) => sum + payment.totalPayment,
+          (sum, payment) => sum + payment.grandTotal,
           0
         );
 

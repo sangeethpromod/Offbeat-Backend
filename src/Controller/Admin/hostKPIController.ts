@@ -140,10 +140,6 @@ export const getHostList = async (
   }
 };
 
-
-
-
-
 /**
  * GET /api/admin/hosts/:userId
  * Get detailed host information by userId (Admin only)
@@ -207,7 +203,7 @@ export const getHostDetails = async (
       // Calculate total earnings for this story
       const bookings = await Booking.find({ storyId: story.storyId });
       const totalEarnings = bookings.reduce((sum, booking) => {
-        return sum + (booking.paymentDetails?.[0]?.totalPayment || 0);
+        return sum + (booking.paymentDetails?.[0]?.grandTotal || 0);
       }, 0);
 
       return {
