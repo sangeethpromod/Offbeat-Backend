@@ -13,10 +13,7 @@ import newrelic from 'newrelic';
 interface CreateOrderRequest {
   bookingId: string;
   storyId: string;
-  amount: number;
-  baseAmount: number;
-  discount: number;
-  travellers: any[];
+  grandTotal: number;
 }
 
 interface VerifyPaymentRequest {
@@ -34,32 +31,22 @@ export const createRazorpayOrder = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { bookingId, storyId, amount, baseAmount, discount, travellers } =
-      req.body;
+    const { bookingId, storyId, grandTotal } = req.body;
     const userId = (req as any).jwtUser?.userId;
 
     // Strict input validation
-    if (!bookingId || !storyId || !amount || !baseAmount || !travellers) {
+    if (!bookingId || !storyId || !grandTotal) {
       res.status(400).json({
         success: false,
-        message:
-          'Missing required fields: bookingId, storyId, amount, baseAmount, travellers',
+        message: 'Missing required fields: bookingId, storyId, grandTotal',
       });
       return;
     }
 
-    if (typeof amount !== 'number' || amount <= 0) {
+    if (typeof grandTotal !== 'number' || grandTotal <= 0) {
       res.status(400).json({
         success: false,
-        message: 'Invalid amount. Must be a positive number',
-      });
-      return;
-    }
-
-    if (!Array.isArray(travellers) || travellers.length === 0) {
-      res.status(400).json({
-        success: false,
-        message: 'Travellers must be a non-empty array',
+        message: 'Invalid grandTotal. Must be a positive number',
       });
       return;
     }
@@ -72,7 +59,7 @@ export const createRazorpayOrder = async (
       return;
     }
 
-    // Verify booking exists
+    // Verify booking exists and get payment details
     const booking = await Booking.findOne({ bookingId });
     if (!booking) {
       res.status(404).json({
@@ -82,8 +69,18 @@ export const createRazorpayOrder = async (
       return;
     }
 
+    // Verify grandTotal matches booking payment details
+    const bookingGrandTotal = booking.paymentDetails[0]?.grandTotal || 0;
+    if (Math.abs(bookingGrandTotal - grandTotal) > 0.01) {
+      res.status(400).json({
+        success: false,
+        message: `Amount mismatch. Expected ${bookingGrandTotal}, received ${grandTotal}`,
+      });
+      return;
+    }
+
     // Convert amount to paise (Razorpay expects smallest currency unit)
-    const amountInPaise = Math.round(amount * 100);
+    const amountInPaise = Math.round(grandTotal * 100);
 
     // Create transaction record with INITIATED status
     const transaction = new Transaction({
@@ -95,9 +92,6 @@ export const createRazorpayOrder = async (
       status: 'INITIATED',
       razorpayOrderId: '', // Will be updated after order creation
       meta: {
-        baseAmount,
-        discount: discount || 0,
-        travellers,
         paymentGateway: 'RAZORPAY',
       },
     });
@@ -106,7 +100,7 @@ export const createRazorpayOrder = async (
     const razorpayOrder = await razorpayClient.orders.create({
       amount: amountInPaise,
       currency: 'INR',
-      receipt: `rcpt_${transaction.transactionId}`,
+      receipt: transaction.transactionId.substring(0, 40), // Max 40 chars for Razorpay
       notes: {
         bookingId,
         storyId,

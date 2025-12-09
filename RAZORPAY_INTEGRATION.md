@@ -51,16 +51,7 @@ RZP_WEBHOOK_SECRET=xxxxxxxxxxxxxxxxxxxxx
 {
   "bookingId": "uuid-v4-booking-id",
   "storyId": "uuid-v4-story-id",
-  "amount": 55000,
-  "baseAmount": 50000,
-  "discount": 1000,
-  "travellers": [
-    {
-      "fullName": "John Doe",
-      "emailAddress": "john@example.com",
-      "phoneNumber": "+919876543210"
-    }
-  ]
+  "grandTotal": 55000
 }
 ```
 
@@ -139,10 +130,7 @@ const orderResponse = await fetch('/api/transactions/create-order', {
   body: JSON.stringify({
     bookingId,
     storyId,
-    amount: 55000,
-    baseAmount: 50000,
-    discount: 1000,
-    travellers: travellerDetails,
+    grandTotal: 55000, // Total amount from booking.paymentDetails[0].grandTotal
   }),
 });
 
@@ -231,14 +219,11 @@ Transaction {
   razorpayPaymentId: string
   razorpaySignature: string
 
-  amount: number (in paise)
+  amount: number (in paise - grandTotal * 100)
   currency: string
   status: INITIATED | PENDING | SUCCESS | FAILED | REFUNDED
 
   meta: {
-    baseAmount: number
-    discount: number
-    travellers: any[]
     paymentGateway: 'RAZORPAY'
   }
 
@@ -246,6 +231,8 @@ Transaction {
   updatedAt: Date
 }
 ```
+
+**Note**: All payment breakdown details (baseAmount, discount, fees, etc.) are stored in the Booking model's `paymentDetails` array. The Transaction model only tracks the final `grandTotal` amount and payment gateway information.
 
 ## Error Handling
 

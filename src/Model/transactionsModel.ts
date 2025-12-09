@@ -9,9 +9,6 @@ export type TransactionStatus =
   | 'REFUNDED';
 
 export interface TransactionMeta {
-  baseAmount: number;
-  discount: number;
-  travellers: any[];
   paymentGateway: 'RAZORPAY';
 }
 
@@ -37,9 +34,6 @@ export interface ITransaction extends Document {
 
 const TransactionMetaSchema = new Schema<TransactionMeta>(
   {
-    baseAmount: { type: Number, required: true, min: 0 },
-    discount: { type: Number, required: true, min: 0, default: 0 },
-    travellers: { type: Schema.Types.Mixed, required: true, default: [] },
     paymentGateway: {
       type: String,
       enum: ['RAZORPAY'],
