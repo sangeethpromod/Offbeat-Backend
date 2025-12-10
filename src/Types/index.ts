@@ -20,6 +20,8 @@ export interface IAuthUser extends Document {
   isActive: boolean;
   firebaseUid?: string; // Firebase User ID
   blockReason?: string | null; // Reason for blocking the user
+  resetCode?: string | null; // Password reset code
+  resetCodeExpiry?: Date | null; // Expiry time for reset code
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +86,21 @@ export interface LoginRequest {
 
 export interface GoogleLoginRequest {
   idToken: string;
+}
+
+export interface RequestPasswordResetRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
 }
 
 // Response Types

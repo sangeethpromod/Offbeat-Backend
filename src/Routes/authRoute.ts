@@ -3,6 +3,9 @@ import {
   registerUser,
   login,
   googleLogin,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
 } from '../Controller/Auth/authController';
 import { refreshTokenHandler } from '../Middleware/tokenManagement';
 import { verifyFirebaseToken } from '../Middleware/firebaseAuth';
@@ -23,6 +26,15 @@ router.post('/google-login', googleLogin);
 
 // POST /api/auth/refresh-token
 router.post('/refresh-token', refreshTokenHandler);
+
+// POST /api/auth/request-password-reset
+router.post('/request-password-reset', requestPasswordReset);
+
+// POST /api/auth/reset-password
+router.post('/reset-password', resetPassword);
+
+// POST /api/auth/change-password
+router.post('/change-password', verifyFirebaseToken, changePassword);
 
 // GET /api/auth/sync
 // Use this to ensure a Firebase-created user is persisted in MongoDB.

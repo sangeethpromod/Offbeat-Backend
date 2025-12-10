@@ -55,6 +55,14 @@ const AuthUserSchema: Schema = new Schema(
       trim: true,
       default: null,
     },
+    resetCode: {
+      type: String,
+      default: null,
+    },
+    resetCodeExpiry: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

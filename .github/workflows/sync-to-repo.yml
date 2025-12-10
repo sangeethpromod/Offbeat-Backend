@@ -1,0 +1,30 @@
+name: Sync to Prod Repo
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout dev repo
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Fetch all history for proper syncing
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "offbeatdevops-developer"
+                  git config --global user.email "offbeatdevops@gmail.com"
+
+            - name: Add prod repo as remote
+              run: |
+                  git remote add prod https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/YOUR_USERNAME/YOUR_PROD_REPO.git
+
+            - name: Push to prod repo dev branch
+              run: |
+                  git push prod main:dev

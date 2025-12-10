@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { generateTokens } from '../../Middleware/tokenManagement';
 import { auth } from '../../Config/firebase';
+import transporter from '../../Config/email';
 import AuthUser from '../../Model/authModel';
 import HostProfile from '../../Model/hostModel';
 import Role from '../../Model/roleModel';
@@ -10,6 +12,9 @@ import {
   RegisterUserRequest,
   LoginRequest,
   GoogleLoginRequest,
+  RequestPasswordResetRequest,
+  ResetPasswordRequest,
+  ChangePasswordRequest,
   ApiResponse,
   LoginResponse,
   GoogleLoginResponse,
@@ -527,3 +532,207 @@ export const googleLogin = async (
 
 // Re-export the Firebase token verification middleware
 export { verifyFirebaseToken } from '../../Middleware/firebaseAuth';
+
+/**
+ * Request Password Reset - sends reset code to email
+ */
+export const requestPasswordReset = async (
+  req: Request<{}, ApiResponse, RequestPasswordResetRequest>,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    const user = await AuthUser.findOne({ email, isActive: true });
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Generate 6-digit reset code
+    const resetCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.resetCode = resetCode;
+    user.resetCodeExpiry = expiry;
+    await user.save();
+
+    // Send email
+    const subject = 'Password Reset Code';
+    const text = `Your password reset code is: ${resetCode}. It expires in 10 minutes.`;
+
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject,
+        text,
+      });
+
+      res.json({
+        success: true,
+        message: 'Reset code sent to your email',
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send reset email',
+      });
+    }
+  } catch (error) {
+    console.error('Error requesting password reset:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Reset Password using code
+ */
+export const resetPassword = async (
+  req: Request<{}, ApiResponse, ResetPasswordRequest>,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Email, code, and new password are required',
+      });
+      return;
+    }
+
+    const user = await AuthUser.findOne({ email, isActive: true });
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    if (
+      !user.resetCode ||
+      user.resetCode !== code ||
+      !user.resetCodeExpiry ||
+      user.resetCodeExpiry < new Date()
+    ) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset code',
+      });
+      return;
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    user.password = hashedPassword;
+    user.resetCode = null;
+    user.resetCodeExpiry = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Change Password (Hard Reset) - requires old password verification
+ */
+export const changePassword = async (
+  req: Request<{}, ApiResponse, ChangePasswordRequest>,
+  res: Response<ApiResponse>
+): Promise<void> => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Old password and new password are required',
+      });
+      return;
+    }
+
+    // Get user from middleware (assuming verifyFirebaseToken or similar sets req.user)
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+      return;
+    }
+
+    const user = await AuthUser.findOne({ userId, isActive: true });
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    if (!user.password) {
+      res.status(400).json({
+        success: false,
+        message: 'No password set for this account',
+      });
+      return;
+    }
+
+    // Verify old password
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid old password',
+      });
+      return;
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
