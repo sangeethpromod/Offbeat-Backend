@@ -15,16 +15,33 @@ jobs:
               with:
                   fetch-depth: 0 # Fetch all history for proper syncing
                   token: ${{ secrets.GITHUB_TOKEN }}
+                  ref: main
 
             - name: Configure Git
               run: |
                   git config --global user.name "offbeatdevops-developer"
                   git config --global user.email "offbeatdevops@gmail.com"
 
-            - name: Add prod repo as remote
+            - name: Debug - Show current branch and commits
               run: |
-                  git remote add prod https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
+                  git branch -a
+                  git log --oneline -5
+                  git status
+
+            - name: Add prod repo as remote
+              env:
+                  PROD_TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
+              run: |
+                  git remote add prod https://${PROD_TOKEN}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
+
+            - name: Verify remote configuration
+              run: |
+                  git remote -v
+
+            - name: Fetch prod repo branches
+              run: |
+                  git fetch prod
 
             - name: Push to prod repo dev branch
               run: |
-                  git push prod main:dev
+                  git push prod HEAD:dev --force
