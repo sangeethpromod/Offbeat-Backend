@@ -23,7 +23,7 @@ jobs:
 
             - name: Add prod repo as remote
               run: |
-                  git remote add prod https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/YOUR_USERNAME/YOUR_PROD_REPO.git
+                  git remote add prod https://x-access-token:${{ secrets.PROD_REPO_TOKEN }}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
 
             - name: Push to prod repo dev branch
               run: |
