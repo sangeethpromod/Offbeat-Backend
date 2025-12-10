@@ -17,10 +17,15 @@ export interface CreateBookingRequest {
     phoneNumber: string;
   }>;
   pricing: {
-    baseAmount: number;
-    discount: number;
     grandTotal: number;
-    [key: string]: number; // Dynamic fee names
+    fixedAmounts: Array<{
+      label: string;
+      amount: number;
+    }>;
+    variableAmounts: Array<{
+      label: string;
+      amount: number;
+    }>;
   };
 }
 
@@ -49,15 +54,15 @@ export const validateBooking = [
     .notEmpty()
     .withMessage('Phone number is required'),
   body('pricing').isObject().withMessage('Pricing object is required'),
-  body('pricing.baseAmount')
-    .isFloat({ min: 0 })
-    .withMessage('baseAmount must be non-negative'),
-  body('pricing.discount')
-    .isFloat({ min: 0 })
-    .withMessage('discount must be non-negative'),
   body('pricing.grandTotal')
     .isFloat({ min: 0 })
     .withMessage('grandTotal must be non-negative'),
+  body('pricing.fixedAmounts')
+    .isArray()
+    .withMessage('fixedAmounts must be an array'),
+  body('pricing.variableAmounts')
+    .isArray()
+    .withMessage('variableAmounts must be an array'),
 ];
 
 /**
@@ -303,7 +308,27 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Extract fees from pricing object (all keys except baseAmount, discount, grandTotal)
+      // Extract base amount and discount from pricing structure
+      let baseAmountPerPerson = 0;
+      let discount = 0;
+
+      // Get base amount from fixedAmounts
+      const baseAmountItem = pricing.fixedAmounts.find(
+        item => item.label === 'Base Amount'
+      );
+      if (baseAmountItem) {
+        baseAmountPerPerson = baseAmountItem.amount;
+      }
+
+      // Get discount from variableAmounts (negative amount)
+      const discountItem = pricing.variableAmounts.find(
+        item => item.label === 'Discount'
+      );
+      if (discountItem) {
+        discount = Math.abs(discountItem.amount); // Convert negative to positive
+      }
+
+      // Extract fees from variableAmounts (exclude discount)
       const fees: Array<{
         feeName: string;
         feeType: 'PERCENTAGE' | 'FLAT' | 'COMMISSION';
@@ -312,29 +337,20 @@ export const createBooking = async (
       }> = [];
       let totalFees = 0;
 
-      Object.keys(pricing).forEach(key => {
-        if (
-          key !== 'baseAmount' &&
-          key !== 'discount' &&
-          key !== 'grandTotal'
-        ) {
-          const feeValue = pricing[key] as number | undefined;
-          if (feeValue !== undefined && typeof feeValue === 'number') {
-            fees.push({
-              feeName: key,
-              feeType: 'PERCENTAGE', // Default to PERCENTAGE, can be customized later
-              value: 0, // Frontend doesn't send this, set to 0 for now
-              calculatedAmount: feeValue,
-            });
-            totalFees += feeValue;
-          }
+      pricing.variableAmounts.forEach(item => {
+        if (item.label !== 'Discount' && item.amount > 0) {
+          fees.push({
+            feeName: item.label,
+            feeType: 'PERCENTAGE',
+            value: 0,
+            calculatedAmount: item.amount,
+          });
+          totalFees += item.amount;
         }
       });
 
-      // Accept frontend pricing calculations without validation
-      const baseAmountPerPerson = pricing.baseAmount;
+      // Calculate totals
       const totalBaseAmount = baseAmountPerPerson * noOfTravellers;
-      const discount = pricing.discount;
       const totalAfterDiscount = totalBaseAmount - discount;
       const grandTotal = pricing.grandTotal;
 
@@ -374,18 +390,35 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Build pricing response in the same format as frontend sent
-      const pricingResponse: any = {
-        baseAmount: baseAmountPerPerson, // Return per-person amount to frontend
-        discount: processedPaymentDetails.discount,
-      };
+      // Build pricing response in new format
+      const fixedAmounts = [
+        {
+          label: 'Base Amount',
+          amount: baseAmountPerPerson,
+        },
+      ];
 
-      // Add dynamic fee fields
+      const variableAmounts: Array<{ label: string; amount: number }> = [];
+
+      if (discount > 0) {
+        variableAmounts.push({
+          label: 'Discount',
+          amount: -discount,
+        });
+      }
+
       processedPaymentDetails.fees.forEach(fee => {
-        pricingResponse[fee.feeName] = fee.calculatedAmount;
+        variableAmounts.push({
+          label: fee.feeName,
+          amount: fee.calculatedAmount,
+        });
       });
 
-      pricingResponse.grandTotal = processedPaymentDetails.grandTotal;
+      const pricingResponse = {
+        grandTotal: processedPaymentDetails.grandTotal,
+        fixedAmounts: fixedAmounts,
+        variableAmounts: variableAmounts,
+      };
 
       // Return success response with pricing breakdown
       res.status(201).json({

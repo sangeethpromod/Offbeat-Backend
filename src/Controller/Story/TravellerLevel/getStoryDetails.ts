@@ -45,20 +45,40 @@ export const getStoryDetailsForTraveller = async (
       'TRAVELLER'
     );
 
-    // Build pricing object with fees
-    const pricingDetails: any = {
-      baseAmount: baseAmount,
-      discount: discount,
-    };
+    // Build pricing structure with fixed and variable amounts
+    const fixedAmounts = [
+      {
+        label: 'Base Amount',
+        amount: baseAmount,
+      },
+    ];
 
-    // Add fee breakdown
+    const variableAmounts: Array<{ label: string; amount: number }> = [];
+
+    // Add discount if exists (as negative amount)
+    if (discount > 0) {
+      variableAmounts.push({
+        label: 'Discount',
+        amount: -discount,
+      });
+    }
+
+    // Add fee breakdown from fee table
     feeBreakdown.forEach(fee => {
-      pricingDetails[fee.feeName] = fee.calculatedAmount;
+      variableAmounts.push({
+        label: fee.feeName,
+        amount: fee.calculatedAmount,
+      });
     });
 
     // Calculate grand total
     const grandTotal = totalAfterDiscount + totalFees;
-    pricingDetails.grandTotal = grandTotal;
+
+    const pricingDetails = {
+      grandTotal: grandTotal,
+      fixedAmounts: fixedAmounts,
+      variableAmounts: variableAmounts,
+    };
 
     // Build comprehensive response in the requested order
     const storyDetails = {
