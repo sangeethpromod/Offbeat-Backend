@@ -19,12 +19,16 @@ import adminRoutes from './Routes/adminRoutes';
 import wishlistRoutes from './Routes/wishlistRoutes';
 import transactionRoutes from './Routes/transactionroutes';
 import { swaggerUi, specs } from './Config/swagger';
+import { startCleanupJob } from './Utils/cleanupAbandonedBookings';
 
 const app = express();
 const PORT: number = parseInt(process.env.PORT || '8080', 10);
 
 // Connect to MongoDB
 database.connect();
+
+// Start abandoned booking cleanup job (runs every 15 minutes, cleans bookings pending for 30+ minutes)
+startCleanupJob(15, 30);
 
 // Middleware
 app.use(

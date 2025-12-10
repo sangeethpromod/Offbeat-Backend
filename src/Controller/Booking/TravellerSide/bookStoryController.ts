@@ -94,8 +94,9 @@ async function getBookedTravellersForDate(
   const result = await Booking.aggregate([
     {
       $match: {
-        storyId: storyId, // Now storyId is a string UUID
+        storyId: storyId,
         status: 'confirmed',
+        bookingStatus: 'success', // Only count successful paid bookings
         startDate: { $lte: date },
         endDate: { $gte: date },
       },
@@ -382,17 +383,17 @@ export const createBooking = async (
         })
       );
 
-      // Create booking with the storyId from the database
+      // Create booking with PENDING status - will be confirmed after payment
       const booking = new Booking({
-        storyId: story.storyId, // Get storyId from the found story document
+        storyId: story.storyId,
         userId: (req as any).jwtUser?.userId,
         startDate: bookingStartDate,
         endDate: bookingEndDate,
         noOfTravellers: totalTravellers,
         travellers,
         paymentDetails: processedPaymentDetails,
-        status: 'confirmed',
-        bookingStatus: 'success', // Set booking status to success
+        status: 'confirmed', // Keep as confirmed for now for capacity tracking
+        bookingStatus: 'pending', // Set to pending - will be success after payment
       });
 
       await booking.save({ session });
@@ -411,7 +412,7 @@ export const createBooking = async (
       // Return success response with full fee breakdown
       res.status(201).json({
         success: true,
-        message: 'Booking created successfully',
+        message: 'Booking created successfully. Proceed to payment.',
         data: {
           bookingId: booking.bookingId,
           storyId: story.storyId,
@@ -419,6 +420,7 @@ export const createBooking = async (
           endDate: booking.endDate,
           totalTravellers: booking.totalTravellers,
           status: booking.status,
+          bookingStatus: booking.bookingStatus,
           paymentDetails: processedPaymentDetails.map(pd => ({
             baseAmount: pd.baseAmount,
             discount: pd.discount,
