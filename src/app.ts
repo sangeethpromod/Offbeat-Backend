@@ -24,11 +24,11 @@ import { startCleanupJob } from './Utils/cleanupAbandonedBookings';
 const app = express();
 const PORT: number = parseInt(process.env.PORT || '8080', 10);
 
-// Connect to MongoDB
-database.connect();
-
-// Start abandoned booking cleanup job (runs every 15 minutes, cleans bookings pending for 30+ minutes)
-startCleanupJob(15, 30);
+// Connect to MongoDB and start cleanup job after connection
+database.connect().then(() => {
+  // Start abandoned booking cleanup job after DB connection is ready
+  startCleanupJob(15, 30);
+});
 
 // Middleware
 app.use(
