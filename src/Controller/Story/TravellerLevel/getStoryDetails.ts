@@ -42,6 +42,21 @@ export const getStoryDetailsForTraveller = async (
       'TRAVELLER'
     );
 
+    // Build pricing object with fees
+    const pricingDetails: any = {
+      baseAmount: story.amount || 0,
+      discount: story.discount || 0,
+    };
+
+    // Add fee breakdown
+    feeBreakdown.forEach(fee => {
+      pricingDetails[fee.feeName] = fee.calculatedAmount;
+    });
+
+    // Calculate grand total
+    const grandTotal = (story.amount || 0) - (story.discount || 0) + totalFees;
+    pricingDetails.grandTotal = grandTotal;
+
     // Build comprehensive response in the requested order
     const storyDetails = {
       // 1. Heading (Story Title)
@@ -60,21 +75,8 @@ export const getStoryDetailsForTraveller = async (
       // 4. Itinerary
       itinerary: story.itinerary || [],
 
-      // 5. Story Amount and Pricing Details
-      pricing: {
-        pricingType: story.pricingType,
-        baseAmount: story.amount,
-        discount: story.discount || 0,
-        totalPrice: story.totalPrice,
-        priceBreakdown: story.priceBreakdown || [],
-      },
-
-      // 6. Related Fees
-      fees: {
-        totalFees,
-        feeBreakdown,
-        grandTotal: (story.totalPrice || 0) + totalFees,
-      },
+      // 5. Pricing with fees
+      pricing: pricingDetails,
 
       // Additional useful information
       metadata: {
