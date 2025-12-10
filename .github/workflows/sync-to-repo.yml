@@ -3,7 +3,7 @@ name: Sync to Prod Repo
 on:
     push:
         branches:
-            - main
+            - dev1
 
 jobs:
     sync:
