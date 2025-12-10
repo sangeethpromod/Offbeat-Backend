@@ -3,7 +3,7 @@ name: Sync to Prod Repo
 on:
     push:
         branches:
-            - dev1
+            - main
 
 jobs:
     sync:
@@ -13,8 +13,7 @@ jobs:
             - name: Checkout dev repo
               uses: actions/checkout@v4
               with:
-                  fetch-depth: 0 # Fetch all history for proper syncing
-                  token: ${{ secrets.GITHUB_TOKEN }}
+                  fetch-depth: 0
                   ref: main
 
             - name: Configure Git
@@ -22,26 +21,9 @@ jobs:
                   git config --global user.name "offbeatdevops-developer"
                   git config --global user.email "offbeatdevops@gmail.com"
 
-            - name: Debug - Show current branch and commits
-              run: |
-                  git branch -a
-                  git log --oneline -5
-                  git status
-
-            - name: Add prod repo as remote
+            - name: Push to prod repo
               env:
                   PROD_TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
               run: |
                   git remote add prod https://${PROD_TOKEN}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
-
-            - name: Verify remote configuration
-              run: |
-                  git remote -v
-
-            - name: Fetch prod repo branches
-              run: |
-                  git fetch prod
-
-            - name: Push to prod repo dev branch
-              run: |
                   git push prod HEAD:dev --force
