@@ -10,7 +10,6 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            # Checkout the actual branch that triggered the workflow — dev1
             - name: Checkout DEV repo
               uses: actions/checkout@v4
               with:
@@ -26,9 +25,6 @@ jobs:
               env:
                   PROD_TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
               run: |
-                  # Add remote for prod repo
                   git remote add prod https://x-access-token:${PROD_TOKEN}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
                   git fetch prod
-
-                  # Push dev1 from DEV → dev in PROD
                   git push prod dev1:dev --force
