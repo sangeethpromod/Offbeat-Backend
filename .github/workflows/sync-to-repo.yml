@@ -10,20 +10,25 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout dev repo
+            # Checkout the actual branch that triggered the workflow — dev1
+            - name: Checkout DEV repo
               uses: actions/checkout@v4
               with:
                   fetch-depth: 0
-                  ref: main
+                  ref: dev1
 
             - name: Configure Git
               run: |
                   git config --global user.name "offbeatdevops-developer"
                   git config --global user.email "offbeatdevops@gmail.com"
 
-            - name: Push to prod repo
+            - name: Push to PROD repo
               env:
                   PROD_TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
               run: |
-                  git remote add prod https://${PROD_TOKEN}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
-                  git push prod HEAD:dev --force
+                  # Add remote for prod repo
+                  git remote add prod https://x-access-token:${PROD_TOKEN}@github.com/Offbeat-Applications/Offbeat-Backend-Prod.git
+                  git fetch prod
+
+                  # Push dev1 from DEV → dev in PROD
+                  git push prod dev1:dev --force
