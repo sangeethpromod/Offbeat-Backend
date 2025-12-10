@@ -80,6 +80,7 @@ export const getTravellerBookingsSimple = async (
       {
         $project: {
           _id: 0, // Exclude MongoDB _id
+          bookingId: 1, // Include booking ID
           storyName: '$storyDetails.storyTitle',
           location: '$storyDetails.location',
           state: '$storyDetails.state',
@@ -125,6 +126,11 @@ export const getTravellerBookingsSimple = async (
           },
           totalTravellers: '$noOfTravellers',
           bookingStatus: 1, // Include booking status
+          endDate: 1, // Keep endDate for sorting
+          // Flag for past or upcoming
+          isPast: {
+            $lt: ['$endDate', new Date()],
+          },
         },
       },
 
@@ -134,11 +140,22 @@ export const getTravellerBookingsSimple = async (
       },
     ]);
 
+    // Separate bookings into past and upcoming arrays
+    const pastBookings = bookings
+      .filter(b => b.isPast)
+      .map(({ isPast, endDate, ...rest }) => rest);
+
+    const upcomingBookings = bookings
+      .filter(b => !b.isPast)
+      .map(({ isPast, endDate, ...rest }) => rest);
+
     // Track successful database operation
     const queryTime = Date.now() - startTime;
     newrelic.recordCustomEvent('TravellerBookingsDatabaseQuery', {
       userId,
       totalBookingsFound: bookings.length,
+      pastBookingsCount: pastBookings.length,
+      upcomingBookingsCount: upcomingBookings.length,
       queryTimeMs: queryTime,
       avgQueryTimePerBooking:
         bookings.length > 0 ? queryTime / bookings.length : 0,
@@ -148,16 +165,24 @@ export const getTravellerBookingsSimple = async (
     newrelic.recordCustomEvent('TravellerBookingsRetrievedSuccessfully', {
       userId,
       totalBookings: bookings.length,
-      responseSizeKb: JSON.stringify(bookings).length / 1024,
+      pastBookings: pastBookings.length,
+      upcomingBookings: upcomingBookings.length,
+      responseSizeKb:
+        JSON.stringify({ pastBookings, upcomingBookings }).length / 1024,
       queryTimeMs: queryTime,
     });
 
     res.status(200).json({
       success: true,
       message: 'Traveller bookings retrieved successfully',
-      data: bookings,
+      data: {
+        pastBookings,
+        upcomingBookings,
+      },
       meta: {
-        count: bookings.length,
+        totalCount: bookings.length,
+        pastCount: pastBookings.length,
+        upcomingCount: upcomingBookings.length,
         queryTimeMs: queryTime,
       },
     });

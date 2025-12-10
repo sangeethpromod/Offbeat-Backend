@@ -5,7 +5,6 @@ const { body, validationResult } = expressValidator;
 import Booking from '../../../Model/bookingModel';
 import Story from '../../../Model/storyModel';
 import newrelic from 'newrelic';
-import { calculateStoryFees } from '../../../Utils/feeCalculator';
 
 export interface CreateBookingRequest {
   storyId: string;
@@ -17,17 +16,12 @@ export interface CreateBookingRequest {
     emailAddress: string;
     phoneNumber: string;
   }>;
-  paymentDetails: Array<{
+  pricing: {
     baseAmount: number;
     discount: number;
-    fees: Array<{
-      feeName: string;
-      feeType: 'COMMISSION' | 'FLAT' | 'PERCENTAGE';
-      value: number;
-      calculatedAmount: number;
-    }>;
     grandTotal: number;
-  }>;
+    [key: string]: number; // Dynamic fee names
+  };
 }
 
 // Validation middleware
@@ -54,31 +48,14 @@ export const validateBooking = [
     .trim()
     .notEmpty()
     .withMessage('Phone number is required'),
-  body('paymentDetails')
-    .isArray({ min: 1 })
-    .withMessage('At least one payment detail is required'),
-  body('paymentDetails.*.baseAmount')
+  body('pricing').isObject().withMessage('Pricing object is required'),
+  body('pricing.baseAmount')
     .isFloat({ min: 0 })
     .withMessage('baseAmount must be non-negative'),
-  body('paymentDetails.*.discount')
+  body('pricing.discount')
     .isFloat({ min: 0 })
     .withMessage('discount must be non-negative'),
-  body('paymentDetails.*.fees').isArray().withMessage('fees must be an array'),
-  body('paymentDetails.*.fees.*.feeName')
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Fee name is required'),
-  body('paymentDetails.*.fees.*.feeType')
-    .isIn(['COMMISSION', 'FLAT', 'PERCENTAGE'])
-    .withMessage('feeType must be COMMISSION, FLAT, or PERCENTAGE'),
-  body('paymentDetails.*.fees.*.value')
-    .isFloat({ min: 0 })
-    .withMessage('fee value must be non-negative'),
-  body('paymentDetails.*.fees.*.calculatedAmount')
-    .isFloat({ min: 0 })
-    .withMessage('calculatedAmount must be non-negative'),
-  body('paymentDetails.*.grandTotal')
+  body('pricing.grandTotal')
     .isFloat({ min: 0 })
     .withMessage('grandTotal must be non-negative'),
 ];
@@ -179,14 +156,8 @@ export const createBooking = async (
     return;
   }
 
-  const {
-    storyId,
-    startDate,
-    endDate,
-    noOfTravellers,
-    travellers,
-    paymentDetails,
-  } = req.body;
+  const { storyId, startDate, endDate, noOfTravellers, travellers, pricing } =
+    req.body;
 
   // Log booking attempt
   console.log('Booking creation started', {
@@ -332,56 +303,48 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Calculate fees dynamically for each payment detail and validate against frontend
-      const processedPaymentDetails = await Promise.all(
-        paymentDetails.map(async detail => {
-          const baseAmount = detail.baseAmount;
-          const discount = detail.discount;
-          const totalAfterDiscount = Math.max(0, baseAmount - discount);
+      // Extract fees from pricing object (all keys except baseAmount, discount, grandTotal)
+      const fees: Array<{
+        feeName: string;
+        amount: number;
+      }> = [];
+      let totalFees = 0;
 
-          // Calculate fees using the fee structure
-          const { totalFees, feeBreakdown } = await calculateStoryFees(
-            totalAfterDiscount,
-            'TRAVELLER'
-          );
-
-          const serverGrandTotal = totalAfterDiscount + totalFees;
-
-          // Validate frontend calculations against server calculations
-          const frontendGrandTotal = detail.grandTotal;
-          const frontendTotalFees = detail.fees.reduce(
-            (sum, fee) => sum + fee.calculatedAmount,
-            0
-          );
-
-          // Allow small floating-point differences (0.01)
-          if (Math.abs(serverGrandTotal - frontendGrandTotal) > 0.01) {
-            throw new Error(
-              `Payment mismatch — invalid total provided. Expected ${serverGrandTotal.toFixed(
-                2
-              )}, received ${frontendGrandTotal.toFixed(2)}`
-            );
+      Object.keys(pricing).forEach(key => {
+        if (
+          key !== 'baseAmount' &&
+          key !== 'discount' &&
+          key !== 'grandTotal'
+        ) {
+          const feeValue = pricing[key] as number | undefined;
+          if (feeValue !== undefined && typeof feeValue === 'number') {
+            fees.push({
+              feeName: key,
+              amount: feeValue,
+            });
+            totalFees += feeValue;
           }
+        }
+      });
 
-          if (Math.abs(totalFees - frontendTotalFees) > 0.01) {
-            throw new Error(
-              `Fee calculation mismatch. Expected total fees ${totalFees.toFixed(
-                2
-              )}, received ${frontendTotalFees.toFixed(2)}`
-            );
-          }
+      // Accept frontend pricing calculations without validation
+      const baseAmountPerPerson = pricing.baseAmount;
+      const totalBaseAmount = baseAmountPerPerson * noOfTravellers;
+      const discount = pricing.discount;
+      const totalAfterDiscount = totalBaseAmount - discount;
+      const grandTotal = pricing.grandTotal;
 
-          // Return the validated payment detail with server-calculated values
-          return {
-            baseAmount,
-            discount,
-            totalAfterDiscount,
-            fees: feeBreakdown,
-            totalFees,
-            grandTotal: serverGrandTotal,
-          };
-        })
-      );
+      // Build processed payment details with frontend data
+      const processedPaymentDetails = {
+        baseAmountPerPerson: baseAmountPerPerson,
+        noOfTravellers: noOfTravellers,
+        totalBaseAmount: totalBaseAmount,
+        discount: discount,
+        totalAfterDiscount: totalAfterDiscount,
+        fees: fees,
+        totalFees: totalFees,
+        grandTotal: grandTotal,
+      };
 
       // Create booking with PENDING status - will be confirmed after payment
       const booking = new Booking({
@@ -391,7 +354,7 @@ export const createBooking = async (
         endDate: bookingEndDate,
         noOfTravellers: totalTravellers,
         travellers,
-        paymentDetails: processedPaymentDetails,
+        paymentDetails: [processedPaymentDetails], // Wrap in array for backward compatibility
         status: 'confirmed', // Keep as confirmed for now for capacity tracking
         bookingStatus: 'pending', // Set to pending - will be success after payment
       });
@@ -409,7 +372,20 @@ export const createBooking = async (
         timestamp: new Date().toISOString(),
       });
 
-      // Return success response with full fee breakdown
+      // Build pricing response in the same format as frontend sent
+      const pricingResponse: any = {
+        baseAmount: processedPaymentDetails.baseAmountPerPerson,
+        discount: processedPaymentDetails.discount,
+      };
+
+      // Add dynamic fee fields
+      processedPaymentDetails.fees.forEach(fee => {
+        pricingResponse[fee.feeName] = fee.amount;
+      });
+
+      pricingResponse.grandTotal = processedPaymentDetails.grandTotal;
+
+      // Return success response with pricing breakdown
       res.status(201).json({
         success: true,
         message: 'Booking created successfully. Proceed to payment.',
@@ -418,17 +394,10 @@ export const createBooking = async (
           storyId: story.storyId,
           startDate: booking.startDate,
           endDate: booking.endDate,
-          totalTravellers: booking.totalTravellers,
+          noOfTravellers: booking.noOfTravellers,
           status: booking.status,
           bookingStatus: booking.bookingStatus,
-          paymentDetails: processedPaymentDetails.map(pd => ({
-            baseAmount: pd.baseAmount,
-            discount: pd.discount,
-            totalAfterDiscount: pd.totalAfterDiscount,
-            fees: pd.fees,
-            totalFees: pd.totalFees,
-            grandTotal: pd.grandTotal,
-          })),
+          pricing: pricingResponse,
           createdAt: booking.createdAt,
         },
       });

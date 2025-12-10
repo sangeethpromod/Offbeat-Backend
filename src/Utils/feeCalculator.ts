@@ -2,12 +2,12 @@ import FeeStructure from '../Model/feeModel';
 
 /**
  * Calculate fees for a story booking
- * @param baseAmount - The base price of the story
+ * @param totalAfterDiscount - The total amount after applying discount (baseAmount * people - discount)
  * @param appliesTo - Who the fee applies to ('TRAVELLER', 'HOST', or 'BOTH')
  * @returns Object containing fee breakdown and total
  */
 export const calculateStoryFees = async (
-  baseAmount: number,
+  totalAfterDiscount: number,
   appliesTo: 'TRAVELLER' | 'HOST' | 'BOTH' = 'TRAVELLER'
 ) => {
   try {
@@ -35,10 +35,10 @@ export const calculateStoryFees = async (
           calculatedAmount = fee.value;
           break;
         case 'PERCENTAGE':
-          calculatedAmount = (baseAmount * fee.value) / 100;
+          calculatedAmount = (totalAfterDiscount * fee.value) / 100;
           break;
         case 'COMMISSION':
-          calculatedAmount = (baseAmount * fee.value) / 100;
+          calculatedAmount = (totalAfterDiscount * fee.value) / 100;
           break;
         default:
           calculatedAmount = 0;

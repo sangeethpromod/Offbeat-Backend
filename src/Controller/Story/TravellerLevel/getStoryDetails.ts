@@ -35,17 +35,20 @@ export const getStoryDetailsForTraveller = async (
       return;
     }
 
-    // Calculate fees for travellers
+    // Calculate fees for travellers on amount after discount
     const baseAmount = story.amount || 0;
+    const discount = story.discount || 0;
+    const totalAfterDiscount = baseAmount - discount;
+
     const { totalFees, feeBreakdown } = await calculateStoryFees(
-      baseAmount,
+      totalAfterDiscount,
       'TRAVELLER'
     );
 
     // Build pricing object with fees
     const pricingDetails: any = {
-      baseAmount: story.amount || 0,
-      discount: story.discount || 0,
+      baseAmount: baseAmount,
+      discount: discount,
     };
 
     // Add fee breakdown
@@ -54,7 +57,7 @@ export const getStoryDetailsForTraveller = async (
     });
 
     // Calculate grand total
-    const grandTotal = (story.amount || 0) - (story.discount || 0) + totalFees;
+    const grandTotal = totalAfterDiscount + totalFees;
     pricingDetails.grandTotal = grandTotal;
 
     // Build comprehensive response in the requested order
