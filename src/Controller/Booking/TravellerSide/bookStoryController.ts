@@ -306,7 +306,9 @@ export const createBooking = async (
       // Extract fees from pricing object (all keys except baseAmount, discount, grandTotal)
       const fees: Array<{
         feeName: string;
-        amount: number;
+        feeType: 'PERCENTAGE' | 'FLAT' | 'COMMISSION';
+        value: number;
+        calculatedAmount: number;
       }> = [];
       let totalFees = 0;
 
@@ -320,7 +322,9 @@ export const createBooking = async (
           if (feeValue !== undefined && typeof feeValue === 'number') {
             fees.push({
               feeName: key,
-              amount: feeValue,
+              feeType: 'PERCENTAGE', // Default to PERCENTAGE, can be customized later
+              value: 0, // Frontend doesn't send this, set to 0 for now
+              calculatedAmount: feeValue,
             });
             totalFees += feeValue;
           }
@@ -336,9 +340,7 @@ export const createBooking = async (
 
       // Build processed payment details with frontend data
       const processedPaymentDetails = {
-        baseAmountPerPerson: baseAmountPerPerson,
-        noOfTravellers: noOfTravellers,
-        totalBaseAmount: totalBaseAmount,
+        baseAmount: totalBaseAmount, // Store total base amount, not per person
         discount: discount,
         totalAfterDiscount: totalAfterDiscount,
         fees: fees,
@@ -374,13 +376,13 @@ export const createBooking = async (
 
       // Build pricing response in the same format as frontend sent
       const pricingResponse: any = {
-        baseAmount: processedPaymentDetails.baseAmountPerPerson,
+        baseAmount: baseAmountPerPerson, // Return per-person amount to frontend
         discount: processedPaymentDetails.discount,
       };
 
       // Add dynamic fee fields
       processedPaymentDetails.fees.forEach(fee => {
-        pricingResponse[fee.feeName] = fee.amount;
+        pricingResponse[fee.feeName] = fee.calculatedAmount;
       });
 
       pricingResponse.grandTotal = processedPaymentDetails.grandTotal;
