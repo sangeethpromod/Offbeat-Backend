@@ -1,35 +1,30 @@
 import * as admin from 'firebase-admin';
-import * as path from 'path';
 
 /**
  * Initialize Firebase Admin SDK
  *
- * This module initializes Firebase Admin SDK using the service account key.
- * The service account key should be stored securely as 'serviceAccountKey.json' in the project root.
+ * This module initializes Firebase Admin SDK using the service account JSON from environment variable.
+ * The FIREBASE_SERVICE_ACCOUNT_JSON should contain the service account key as a JSON string.
  */
 
-let firebaseApp: admin.app.App;
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+if (!serviceAccountJson) {
+  throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not set');
+}
 
-try {
-  // Path to service account key - stored in project root for security
-  const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
+const serviceAccount = JSON.parse(serviceAccountJson);
 
-  // Initialize Firebase Admin SDK
-  firebaseApp = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccountPath),
-    // Add other config as needed, e.g., databaseURL, storageBucket
+if (admin.apps.length === 0) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
   });
 
   console.log('Firebase Admin SDK initialized successfully');
-} catch (error) {
-  console.error('Failed to initialize Firebase Admin SDK:', error);
-  console.error(
-    'Please ensure serviceAccountKey.json is present in the project root'
-  );
-  throw new Error('Firebase initialization failed');
+} else {
+  console.log('Firebase Admin SDK already initialized');
 }
 
 // Export Firebase services
 export const auth = admin.auth();
 export const firestore = admin.firestore();
-export default firebaseApp;
+export default admin.app();

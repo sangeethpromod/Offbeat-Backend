@@ -25,6 +25,11 @@ import {
   unblockStory,
   rejectStory,
 } from '../Controller/Admin/storyApprovalController';
+import {
+  transactionTableData,
+  transactionDetails,
+} from '../Controller/Payment/paymentMetricController';
+
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 import { requireAdmin } from '../Middleware/roleAuth';
 
@@ -111,5 +116,15 @@ adminRoutes.patch('/stories/unblock', unblockStory);
 
 // Action: Reject a story + record reason
 adminRoutes.patch('/stories/reject', rejectStory);
+
+// -------------------------------------------------------
+// 📖 Transaction MANAGEMENT
+// -------------------------------------------------------
+
+// POST /api/admin/transaction-table-data - Get paginated transaction table data for successful payments
+adminRoutes.post('/transaction-table-data', transactionTableData);
+
+// GET /api/admin/transaction-details/:razorpayOrderId - Get detailed transaction information by Razorpay Order ID
+adminRoutes.get('/transaction-details/:razorpayOrderId', transactionDetails);
 
 export default adminRoutes;

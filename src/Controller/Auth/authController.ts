@@ -318,7 +318,7 @@ export const login = async (
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          firebaseUid: user.firebaseUid,
+          ...(user.firebaseUid && { firebaseUid: user.firebaseUid }),
         },
         token: accessToken,
         accessToken,
@@ -560,8 +560,8 @@ export const requestPasswordReset = async (
       return;
     }
 
-    // Generate 6-digit reset code
-    const resetCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    // Generate 6-digit numeric reset code
+    const resetCode = crypto.randomInt(100000, 1000000).toString();
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     user.resetCode = resetCode;
