@@ -103,7 +103,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/transactions', transactionRoutes);
 
-// Swagger documentation
+// Swagger documentation Update
 app.use(
   '/api-docs',
   swaggerUi.serve,
