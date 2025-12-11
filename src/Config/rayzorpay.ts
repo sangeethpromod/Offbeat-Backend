@@ -4,6 +4,13 @@ import Razorpay from 'razorpay';
 const RZP_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RZP_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
+console.log('Razorpay Config Debug:', {
+  hasKeyId: !!RZP_KEY_ID,
+  hasKeySecret: !!RZP_KEY_SECRET,
+  keyIdPrefix: RZP_KEY_ID ? RZP_KEY_ID.substring(0, 10) + '...' : 'missing',
+  envKeys: Object.keys(process.env).filter(k => k.includes('RAZOR')),
+});
+
 if (!RZP_KEY_ID || !RZP_KEY_SECRET) {
   throw new Error(
     'Razorpay credentials missing: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in environment variables'

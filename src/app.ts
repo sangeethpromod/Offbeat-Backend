@@ -1,8 +1,24 @@
 import 'newrelic';
 
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config({ path: '.env.dev' });
+// Load environment variables from .env.dev
+const envPath = path.resolve(process.cwd(), '.env.dev');
+const result = dotenv.config({ path: envPath });
+
+if (result.error) {
+  console.warn(
+    '⚠️  Warning: Could not load .env.dev file:',
+    result.error.message
+  );
+  console.warn('Attempting to load from default .env file...');
+  dotenv.config(); // Fallback to .env
+}
+
+console.log(
+  `✅ Loaded ${Object.keys(result.parsed || {}).length} environment variables from ${envPath}`
+);
 
 import express from 'express';
 import cors from 'cors';
