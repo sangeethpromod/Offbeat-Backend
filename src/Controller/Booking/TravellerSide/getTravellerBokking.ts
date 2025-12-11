@@ -126,6 +126,7 @@ export const getTravellerBookingsSimple = async (
           },
           totalTravellers: '$noOfTravellers',
           bookingStatus: 1, // Include booking status
+          startDate: 1, // Include startDate for sorting
           endDate: 1, // Keep endDate for sorting
           // Flag for past or upcoming
           isPast: {
@@ -143,11 +144,19 @@ export const getTravellerBookingsSimple = async (
     // Separate bookings into past and upcoming arrays
     const pastBookings = bookings
       .filter(b => b.isPast)
-      .map(({ isPast, endDate, ...rest }) => rest);
+      .sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      ) // Most recent past first
+      .map(({ isPast, endDate, startDate, ...rest }) => rest);
 
     const upcomingBookings = bookings
       .filter(b => !b.isPast)
-      .map(({ isPast, endDate, ...rest }) => rest);
+      .sort(
+        (a, b) =>
+          new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      ) // Soonest upcoming first
+      .map(({ isPast, endDate, startDate, ...rest }) => rest);
 
     // Track successful database operation
     const queryTime = Date.now() - startTime;
