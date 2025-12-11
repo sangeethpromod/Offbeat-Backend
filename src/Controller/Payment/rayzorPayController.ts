@@ -213,6 +213,61 @@ export const verifyRazorpayPayment = async (
     transaction.status = 'SUCCESS';
     transaction.razorpayPaymentId = razorpay_payment_id;
     transaction.razorpaySignature = razorpay_signature;
+
+    // Fetch detailed payment information from Razorpay
+    try {
+      const paymentDetails =
+        await razorpayClient.payments.fetch(razorpay_payment_id);
+
+      // Extract payment method details
+      const paymentDetailsData: any = {};
+      if (paymentDetails.method)
+        paymentDetailsData.method = paymentDetails.method;
+      if (paymentDetails.acquirer_data?.rrn)
+        paymentDetailsData.bankRRN = paymentDetails.acquirer_data.rrn;
+      if (paymentDetails.invoice_id)
+        paymentDetailsData.invoiceId = paymentDetails.invoice_id;
+      if ((paymentDetails.acquirer_data as any)?.account_type)
+        paymentDetailsData.payerAccountType = (
+          paymentDetails.acquirer_data as any
+        ).account_type;
+      if (paymentDetails.vpa) paymentDetailsData.vpa = paymentDetails.vpa;
+      if (paymentDetails.card?.network)
+        paymentDetailsData.cardNetwork = paymentDetails.card.network;
+      if (paymentDetails.card?.last4)
+        paymentDetailsData.cardLast4 = paymentDetails.card.last4;
+      if (paymentDetails.bank) paymentDetailsData.bank = paymentDetails.bank;
+      if (paymentDetails.wallet)
+        paymentDetailsData.wallet = paymentDetails.wallet;
+
+      if (Object.keys(paymentDetailsData).length > 0) {
+        transaction.paymentDetails = paymentDetailsData;
+      }
+
+      // Extract fee details
+      const feeDetailsData: any = {};
+      if (paymentDetails.fee !== undefined)
+        feeDetailsData.totalFee = paymentDetails.fee;
+      if (
+        paymentDetails.fee !== undefined &&
+        paymentDetails.tax !== undefined
+      ) {
+        feeDetailsData.razorpayFee = paymentDetails.fee - paymentDetails.tax;
+      }
+      if (paymentDetails.tax !== undefined)
+        feeDetailsData.gst = paymentDetails.tax;
+
+      if (Object.keys(feeDetailsData).length > 0) {
+        transaction.feeDetails = feeDetailsData;
+      }
+    } catch (fetchError) {
+      console.error(
+        'Error fetching payment details from Razorpay:',
+        fetchError
+      );
+      // Continue even if fetching details fails
+    }
+
     await transaction.save();
 
     // Update booking status
@@ -321,6 +376,62 @@ export const razorpayWebhookHandler = async (
       if (transaction.status !== 'SUCCESS') {
         transaction.status = 'SUCCESS';
         transaction.razorpayPaymentId = paymentId;
+
+        // Fetch detailed payment information from Razorpay
+        try {
+          const paymentDetails = await razorpayClient.payments.fetch(paymentId);
+
+          // Extract payment method details
+          const paymentDetailsData: any = {};
+          if (paymentDetails.method)
+            paymentDetailsData.method = paymentDetails.method;
+          if (paymentDetails.acquirer_data?.rrn)
+            paymentDetailsData.bankRRN = paymentDetails.acquirer_data.rrn;
+          if (paymentDetails.invoice_id)
+            paymentDetailsData.invoiceId = paymentDetails.invoice_id;
+          if ((paymentDetails.acquirer_data as any)?.account_type)
+            paymentDetailsData.payerAccountType = (
+              paymentDetails.acquirer_data as any
+            ).account_type;
+          if (paymentDetails.vpa) paymentDetailsData.vpa = paymentDetails.vpa;
+          if (paymentDetails.card?.network)
+            paymentDetailsData.cardNetwork = paymentDetails.card.network;
+          if (paymentDetails.card?.last4)
+            paymentDetailsData.cardLast4 = paymentDetails.card.last4;
+          if (paymentDetails.bank)
+            paymentDetailsData.bank = paymentDetails.bank;
+          if (paymentDetails.wallet)
+            paymentDetailsData.wallet = paymentDetails.wallet;
+
+          if (Object.keys(paymentDetailsData).length > 0) {
+            transaction.paymentDetails = paymentDetailsData;
+          }
+
+          // Extract fee details
+          const feeDetailsData: any = {};
+          if (paymentDetails.fee !== undefined)
+            feeDetailsData.totalFee = paymentDetails.fee;
+          if (
+            paymentDetails.fee !== undefined &&
+            paymentDetails.tax !== undefined
+          ) {
+            feeDetailsData.razorpayFee =
+              paymentDetails.fee - paymentDetails.tax;
+          }
+          if (paymentDetails.tax !== undefined)
+            feeDetailsData.gst = paymentDetails.tax;
+
+          if (Object.keys(feeDetailsData).length > 0) {
+            transaction.feeDetails = feeDetailsData;
+          }
+        } catch (fetchError) {
+          console.error(
+            'Error fetching payment details in webhook:',
+            fetchError
+          );
+          // Continue even if fetching details fails
+        }
+
         await transaction.save();
 
         // Update booking
@@ -353,5 +464,187 @@ export const razorpayWebhookHandler = async (
 
     // Return 200 even on error to prevent retries for unrecoverable errors
     res.status(200).send('OK');
+  }
+};
+
+/**
+ * Get transaction details by transactionId
+ */
+export const getTransactionDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { transactionId } = req.params;
+    const userId = (req as any).jwtUser?.userId;
+
+    if (!transactionId) {
+      res.status(400).json({
+        success: false,
+        message: 'Transaction ID is required',
+      });
+      return;
+    }
+
+    // Find transaction
+    const transaction = await Transaction.findOne({ transactionId });
+
+    if (!transaction) {
+      res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+      return;
+    }
+
+    // Verify user owns this transaction (unless admin)
+    const userRole = (req as any).jwtUser?.role;
+    if (userRole !== 'admin' && transaction.userId !== userId) {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized to view this transaction',
+      });
+      return;
+    }
+
+    // Format amounts from paise to rupees for display
+    const formatAmount = (amountInPaise?: number) =>
+      amountInPaise ? (amountInPaise / 100).toFixed(2) : null;
+
+    res.status(200).json({
+      success: true,
+      message: 'Transaction details retrieved successfully',
+      data: {
+        transactionId: transaction.transactionId,
+        bookingId: transaction.bookingId,
+        storyId: transaction.storyId,
+        userId: transaction.userId,
+        status: transaction.status,
+        amount: formatAmount(transaction.amount),
+        currency: transaction.currency,
+        razorpayOrderId: transaction.razorpayOrderId,
+        razorpayPaymentId: transaction.razorpayPaymentId,
+        paymentDetails: transaction.paymentDetails
+          ? {
+              method: transaction.paymentDetails.method,
+              bankRRN: transaction.paymentDetails.bankRRN,
+              invoiceId: transaction.paymentDetails.invoiceId,
+              payerAccountType: transaction.paymentDetails.payerAccountType,
+              vpa: transaction.paymentDetails.vpa,
+              cardNetwork: transaction.paymentDetails.cardNetwork,
+              cardLast4: transaction.paymentDetails.cardLast4,
+              bank: transaction.paymentDetails.bank,
+              wallet: transaction.paymentDetails.wallet,
+            }
+          : null,
+        feeDetails: transaction.feeDetails
+          ? {
+              totalFee: formatAmount(transaction.feeDetails.totalFee),
+              razorpayFee: formatAmount(transaction.feeDetails.razorpayFee),
+              gst: formatAmount(transaction.feeDetails.gst),
+              serviceTax: formatAmount(transaction.feeDetails.serviceTax),
+            }
+          : null,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching transaction details:', error);
+    newrelic.noticeError(error, {
+      transactionId: req.params.transactionId || 'unknown',
+    });
+
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch transaction details',
+    });
+  }
+};
+
+/**
+ * Get all transactions for a booking
+ */
+export const getBookingTransactions = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const userId = (req as any).jwtUser?.userId;
+
+    if (!bookingId) {
+      res.status(400).json({
+        success: false,
+        message: 'Booking ID is required',
+      });
+      return;
+    }
+
+    // Find all transactions for this booking
+    const transactions = await Transaction.find({ bookingId }).sort({
+      createdAt: -1,
+    });
+
+    // Verify user owns this booking (check first transaction)
+    const userRole = (req as any).jwtUser?.role;
+    if (
+      userRole !== 'admin' &&
+      transactions.length > 0 &&
+      transactions[0] &&
+      transactions[0].userId !== userId
+    ) {
+      res.status(403).json({
+        success: false,
+        message: 'Unauthorized to view these transactions',
+      });
+      return;
+    }
+
+    // Format amounts from paise to rupees
+    const formatAmount = (amountInPaise?: number) =>
+      amountInPaise ? (amountInPaise / 100).toFixed(2) : null;
+
+    const formattedTransactions = transactions.map(transaction => ({
+      transactionId: transaction.transactionId,
+      bookingId: transaction.bookingId,
+      storyId: transaction.storyId,
+      status: transaction.status,
+      amount: formatAmount(transaction.amount),
+      currency: transaction.currency,
+      razorpayOrderId: transaction.razorpayOrderId,
+      razorpayPaymentId: transaction.razorpayPaymentId,
+      paymentDetails: transaction.paymentDetails,
+      feeDetails: transaction.feeDetails
+        ? {
+            totalFee: formatAmount(transaction.feeDetails.totalFee),
+            razorpayFee: formatAmount(transaction.feeDetails.razorpayFee),
+            gst: formatAmount(transaction.feeDetails.gst),
+            serviceTax: formatAmount(transaction.feeDetails.serviceTax),
+          }
+        : null,
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: 'Transactions retrieved successfully',
+      data: {
+        bookingId,
+        transactions: formattedTransactions,
+        count: transactions.length,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching booking transactions:', error);
+    newrelic.noticeError(error, {
+      bookingId: req.params.bookingId || 'unknown',
+    });
+
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch transactions',
+    });
   }
 };

@@ -4,6 +4,8 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   razorpayWebhookHandler,
+  getTransactionDetails,
+  getBookingTransactions,
 } from '../Controller/Payment/rayzorPayController';
 import { verifyAccessToken } from '../Middleware/tokenManagement';
 
@@ -57,6 +59,28 @@ transactionRoutes.post(
     },
   }),
   asyncHandler(razorpayWebhookHandler)
+);
+
+/**
+ * GET /api/transactions/:transactionId
+ * Get detailed transaction information including payment method, fees, etc.
+ * Protected: Requires authentication
+ */
+transactionRoutes.get(
+  '/:transactionId',
+  verifyAccessToken,
+  asyncHandler(getTransactionDetails)
+);
+
+/**
+ * GET /api/transactions/booking/:bookingId
+ * Get all transactions for a specific booking
+ * Protected: Requires authentication
+ */
+transactionRoutes.get(
+  '/booking/:bookingId',
+  verifyAccessToken,
+  asyncHandler(getBookingTransactions)
 );
 
 export default transactionRoutes;

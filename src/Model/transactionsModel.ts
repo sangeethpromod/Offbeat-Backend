@@ -12,6 +12,25 @@ export interface TransactionMeta {
   paymentGateway: 'RAZORPAY';
 }
 
+export interface PaymentDetails {
+  method?: string; // UPI, Card, NetBanking, etc.
+  bankRRN?: string; // Bank Reference Number
+  invoiceId?: string; // Razorpay Invoice ID
+  payerAccountType?: string; // Account type used for payment
+  vpa?: string; // UPI VPA (Virtual Payment Address)
+  cardNetwork?: string; // Visa, Mastercard, etc.
+  cardLast4?: string; // Last 4 digits of card
+  bank?: string; // Bank name
+  wallet?: string; // Wallet name if wallet payment
+}
+
+export interface FeeDetails {
+  totalFee?: number; // Total fee charged by Razorpay (in paise)
+  razorpayFee?: number; // Razorpay's fee (in paise)
+  gst?: number; // GST on the fee (in paise)
+  serviceTax?: number; // Service tax if applicable (in paise)
+}
+
 export interface ITransaction extends Document {
   transactionId: string;
   bookingId: string;
@@ -25,6 +44,9 @@ export interface ITransaction extends Document {
   amount: number;
   currency: string;
   status: TransactionStatus;
+
+  paymentDetails?: PaymentDetails; // Detailed payment information
+  feeDetails?: FeeDetails; // Fee breakdown
 
   meta: TransactionMeta;
 
@@ -40,6 +62,31 @@ const TransactionMetaSchema = new Schema<TransactionMeta>(
       default: 'RAZORPAY',
       required: true,
     },
+  },
+  { _id: false }
+);
+
+const PaymentDetailsSchema = new Schema<PaymentDetails>(
+  {
+    method: { type: String },
+    bankRRN: { type: String },
+    invoiceId: { type: String },
+    payerAccountType: { type: String },
+    vpa: { type: String },
+    cardNetwork: { type: String },
+    cardLast4: { type: String },
+    bank: { type: String },
+    wallet: { type: String },
+  },
+  { _id: false }
+);
+
+const FeeDetailsSchema = new Schema<FeeDetails>(
+  {
+    totalFee: { type: Number },
+    razorpayFee: { type: Number },
+    gst: { type: Number },
+    serviceTax: { type: Number },
   },
   { _id: false }
 );
@@ -97,6 +144,16 @@ const TransactionSchema = new Schema<ITransaction>(
       enum: ['INITIATED', 'PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'],
       default: 'INITIATED',
       required: true,
+    },
+
+    paymentDetails: {
+      type: PaymentDetailsSchema,
+      required: false,
+    },
+
+    feeDetails: {
+      type: FeeDetailsSchema,
+      required: false,
     },
 
     meta: {
