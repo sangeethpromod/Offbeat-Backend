@@ -9,6 +9,11 @@ import {
   updateStoryItinerary,
   publishStory,
   adminApproveStory,
+  updateStoryLocation,
+  updateStoryHost,
+  updateStoryPricing,
+  updateStoryImagesWithoutStatus,
+  updateStoryItineraryWithoutStatus,
 } from '../Controller/Story/HostLevel/StoryController';
 import { getStoriesByUser } from '../Controller/Story/HostLevel/getStoryController';
 import { getStoryDetailsForTraveller } from '../Controller/Story/TravellerLevel/getStoryDetails';
@@ -60,5 +65,38 @@ storyRoutes.put('/update-story/:id', updateStory);
 
 // DELETE: DELETE /api/stories/:id - Delete story and S3 images
 storyRoutes.delete('/delete-story/:id', deleteStory);
+
+
+
+
+
+
+
+
+// ======= UPDATE ENDPOINTS (Preserve Status) =======
+// These endpoints allow updating published/approved stories without changing status
+
+// PATCH /api/stories/:id/update-location - Update pickup/dropoff locations
+storyRoutes.patch('/:id/update-location', updateStoryLocation);
+
+// PATCH /api/stories/:id/update-host - Update host name and description
+storyRoutes.patch('/:id/update-host', updateStoryHost);
+
+// PATCH /api/stories/:id/update-pricing - Update pricing details
+storyRoutes.patch('/:id/update-pricing', updateStoryPricing);
+
+// PATCH /api/stories/:id/update-images - Update story images
+storyRoutes.patch(
+  '/:id/update-images',
+  upload.fields([
+    { name: 'bannerImage', maxCount: 1 },
+    { name: 'storyImage', maxCount: 1 },
+    { name: 'otherImages', maxCount: 10 },
+  ]),
+  updateStoryImagesWithoutStatus
+);
+
+// PATCH /api/stories/:id/update-itinerary - Update itinerary details
+storyRoutes.patch('/:id/update-itinerary', updateStoryItineraryWithoutStatus);
 
 export default storyRoutes;

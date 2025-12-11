@@ -1091,3 +1091,561 @@ export const deleteStory = async (
     });
   }
 };
+
+// UPDATE ENDPOINTS - These preserve story status and allow updates to published/approved stories
+
+/**
+ * Update story location details (pickup/dropoff) without changing status
+ * PATCH /api/stories/:id/update-location
+ */
+export const updateStoryLocation = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = (req as any).jwtUser;
+
+    // Find the story
+    const story = await Story.findOne({ storyId: id });
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (story.createdBy !== userId && role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'You can only update your own stories',
+      });
+      return;
+    }
+
+    const {
+      locationType,
+      pickupLocation,
+      pickupGoogleMapLink,
+      dropOffLocation,
+      dropOffGoogleMapLink,
+    } = req.body;
+
+    // Build update object
+    const updateData: any = {};
+    if (locationType !== undefined) updateData.locationType = locationType;
+    if (pickupLocation !== undefined)
+      updateData.pickupLocation = pickupLocation;
+    if (pickupGoogleMapLink !== undefined)
+      updateData.pickupGoogleMapLink = pickupGoogleMapLink;
+    if (dropOffLocation !== undefined)
+      updateData.dropOffLocation = dropOffLocation;
+    if (dropOffGoogleMapLink !== undefined)
+      updateData.dropOffGoogleMapLink = dropOffGoogleMapLink;
+
+    // Validate based on locationType if provided
+    const finalLocationType = locationType || story.locationType;
+    if (finalLocationType) {
+      const errors: string[] = [];
+      switch (finalLocationType) {
+        case 'Pickup and Dropoff': {
+          const finalPickup =
+            pickupLocation !== undefined
+              ? pickupLocation
+              : story.pickupLocation;
+          const finalPickupLink =
+            pickupGoogleMapLink !== undefined
+              ? pickupGoogleMapLink
+              : story.pickupGoogleMapLink;
+          const finalDropoff =
+            dropOffLocation !== undefined
+              ? dropOffLocation
+              : story.dropOffLocation;
+          const finalDropoffLink =
+            dropOffGoogleMapLink !== undefined
+              ? dropOffGoogleMapLink
+              : story.dropOffGoogleMapLink;
+
+          if (!finalPickup || !finalPickupLink)
+            errors.push('pickupLocation and pickupGoogleMapLink are required');
+          if (!finalDropoff || !finalDropoffLink)
+            errors.push(
+              'dropOffLocation and dropOffGoogleMapLink are required'
+            );
+          break;
+        }
+        case 'Pickup Only': {
+          const finalPickup =
+            pickupLocation !== undefined
+              ? pickupLocation
+              : story.pickupLocation;
+          const finalPickupLink =
+            pickupGoogleMapLink !== undefined
+              ? pickupGoogleMapLink
+              : story.pickupGoogleMapLink;
+          if (!finalPickup || !finalPickupLink)
+            errors.push('pickupLocation and pickupGoogleMapLink are required');
+          break;
+        }
+        case 'Drop Only': {
+          const finalDropoff =
+            dropOffLocation !== undefined
+              ? dropOffLocation
+              : story.dropOffLocation;
+          const finalDropoffLink =
+            dropOffGoogleMapLink !== undefined
+              ? dropOffGoogleMapLink
+              : story.dropOffGoogleMapLink;
+          if (!finalDropoff || !finalDropoffLink)
+            errors.push(
+              'dropOffLocation and dropOffGoogleMapLink are required'
+            );
+          break;
+        }
+      }
+
+      if (errors.length) {
+        res.status(400).json({ success: false, message: errors.join('; ') });
+        return;
+      }
+    }
+
+    const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Story location details updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story location:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Update story host information without changing status
+ * PATCH /api/stories/:id/update-host
+ */
+export const updateStoryHost = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = (req as any).jwtUser;
+
+    // Find the story
+    const story = await Story.findOne({ storyId: id });
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (story.createdBy !== userId && role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'You can only update your own stories',
+      });
+      return;
+    }
+
+    const { hostName, hostDescription } = req.body;
+
+    const updateData: any = {};
+    if (hostName !== undefined) updateData.hostName = hostName;
+    if (hostDescription !== undefined)
+      updateData.hostDescription = hostDescription;
+
+    if (Object.keys(updateData).length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'No fields provided to update',
+      });
+      return;
+    }
+
+    const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Story host information updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story host:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Update story pricing without changing status
+ * PATCH /api/stories/:id/update-pricing
+ */
+export const updateStoryPricing = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = (req as any).jwtUser;
+
+    // Find the story
+    const story = await Story.findOne({ storyId: id });
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (story.createdBy !== userId && role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'You can only update your own stories',
+      });
+      return;
+    }
+
+    const { pricingType, amount, discount } = req.body;
+
+    // Build update data
+    const updateData: any = {};
+
+    if (pricingType !== undefined) updateData.pricingType = pricingType;
+
+    if (amount !== undefined || discount !== undefined) {
+      const appliedDiscount = Math.max(
+        0,
+        Number(discount !== undefined ? discount : story.discount) || 0
+      );
+      const base = Math.max(
+        0,
+        Number(amount !== undefined ? amount : story.amount)
+      );
+      const totalBeforeFee = Math.max(0, base - appliedDiscount);
+
+      // Calculate fees dynamically
+      const { totalFees, feeBreakdown } = await calculateStoryFees(
+        totalBeforeFee,
+        'TRAVELLER'
+      );
+
+      const totalPrice = totalBeforeFee + totalFees;
+
+      // Build price breakdown
+      const priceBreakdown = [
+        { label: 'Base Price', value: base },
+        { label: 'Discount', value: appliedDiscount },
+      ];
+
+      feeBreakdown.forEach(fee => {
+        priceBreakdown.push({
+          label: fee.feeName,
+          value: fee.calculatedAmount,
+        });
+      });
+
+      priceBreakdown.push({ label: 'Total Price', value: totalPrice });
+
+      updateData.amount = base;
+      updateData.discount = appliedDiscount;
+      updateData.platformFee = totalFees;
+      updateData.totalPrice = totalPrice;
+      updateData.priceBreakdown = priceBreakdown;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'No pricing fields provided to update',
+      });
+      return;
+    }
+
+    const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Story pricing updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story pricing:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Update story images without changing status
+ * PATCH /api/stories/:id/update-images
+ */
+export const updateStoryImagesWithoutStatus = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = (req as any).jwtUser;
+
+    // Find the story
+    const story = await Story.findOne({ storyId: id });
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (story.createdBy !== userId && role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'You can only update your own stories',
+      });
+      return;
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    if (!files || Object.keys(files).length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'No files uploaded',
+      });
+      return;
+    }
+
+    const storyImages = story.storyImages || {};
+    const uploadPromises: Promise<void>[] = [];
+    const deletionPromises: Promise<void>[] = [];
+
+    // Upload and replace banner image
+    if (files.bannerImage && files.bannerImage.length > 0) {
+      const bannerFile = files.bannerImage[0];
+      if (bannerFile) {
+        // Delete old banner if exists
+        if (storyImages.bannerImage?.key) {
+          deletionPromises.push(
+            s3Service.deleteFile(storyImages.bannerImage.key)
+          );
+        }
+
+        uploadPromises.push(
+          (async () => {
+            const bannerUrl = await s3Service.uploadFile(
+              bannerFile,
+              `stories/${id}/banner`
+            );
+            const bannerKey = bannerUrl.split('/').slice(3).join('/');
+            storyImages.bannerImage = { key: bannerKey, url: bannerUrl };
+          })()
+        );
+      }
+    }
+
+    // Upload and replace story image
+    if (files.storyImage && files.storyImage.length > 0) {
+      const storyFile = files.storyImage[0];
+      if (storyFile) {
+        // Delete old story image if exists
+        if (storyImages.storyImage?.key) {
+          deletionPromises.push(
+            s3Service.deleteFile(storyImages.storyImage.key)
+          );
+        }
+
+        uploadPromises.push(
+          (async () => {
+            const storyUrl = await s3Service.uploadFile(
+              storyFile,
+              `stories/${id}/main`
+            );
+            const storyKey = storyUrl.split('/').slice(3).join('/');
+            storyImages.storyImage = { key: storyKey, url: storyUrl };
+          })()
+        );
+      }
+    }
+
+    // Upload and replace other images
+    if (files.otherImages && files.otherImages.length > 0) {
+      // Delete old other images if exists
+      if (storyImages.otherImages && Array.isArray(storyImages.otherImages)) {
+        storyImages.otherImages.forEach(img => {
+          if (img.key) {
+            deletionPromises.push(s3Service.deleteFile(img.key));
+          }
+        });
+      }
+
+      const otherImagesPromises = files.otherImages.map(async file => {
+        if (file) {
+          const otherUrl = await s3Service.uploadFile(
+            file,
+            `stories/${id}/others`
+          );
+          const otherKey = otherUrl.split('/').slice(3).join('/');
+          return { key: otherKey, url: otherUrl };
+        }
+        return null;
+      });
+
+      uploadPromises.push(
+        (async () => {
+          const uploadedOtherImages = await Promise.all(otherImagesPromises);
+          storyImages.otherImages = uploadedOtherImages.filter(
+            img => img !== null
+          ) as ImageData[];
+        })()
+      );
+    }
+
+    // Execute deletions and uploads
+    await Promise.all(deletionPromises);
+    await Promise.all(uploadPromises);
+
+    // Update the story with new images (preserve status)
+    const updated = await Story.findOneAndUpdate(
+      { storyId: id },
+      { storyImages },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Story images updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story images:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
+/**
+ * Update story itinerary without changing status
+ * PATCH /api/stories/:id/update-itinerary
+ */
+export const updateStoryItineraryWithoutStatus = async (
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = (req as any).jwtUser;
+
+    // Find the story
+    const story = await Story.findOne({ storyId: id });
+    if (!story) {
+      res.status(404).json({ success: false, message: 'Story not found' });
+      return;
+    }
+
+    // Verify ownership
+    if (story.createdBy !== userId && role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'You can only update your own stories',
+      });
+      return;
+    }
+
+    const { pickUpTime, dropOffTime, itinerary } = req.body;
+
+    const updateData: any = {};
+
+    if (pickUpTime !== undefined) {
+      updateData.pickUpTime = new Date(pickUpTime);
+    }
+
+    if (dropOffTime !== undefined) {
+      updateData.dropOffTime = new Date(dropOffTime);
+    }
+
+    if (itinerary !== undefined) {
+      if (!Array.isArray(itinerary)) {
+        res.status(400).json({
+          success: false,
+          message: 'Itinerary must be an array',
+        });
+        return;
+      }
+
+      // Validate each day
+      for (const day of itinerary) {
+        if (typeof day.day !== 'number' || day.day < 1) {
+          res.status(400).json({
+            success: false,
+            message:
+              'Each itinerary day must have a valid day number (minimum 1)',
+          });
+          return;
+        }
+
+        if (!Array.isArray(day.activities)) {
+          res.status(400).json({
+            success: false,
+            message: 'Each day must have an activities array',
+          });
+          return;
+        }
+
+        for (const activity of day.activities) {
+          if (!activity.type || !activity.activityName) {
+            res.status(400).json({
+              success: false,
+              message: 'Each activity must have type and activityName',
+            });
+            return;
+          }
+        }
+      }
+
+      updateData.itinerary = itinerary;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'No itinerary fields provided to update',
+      });
+      return;
+    }
+
+    const updated = await Story.findOneAndUpdate({ storyId: id }, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Story itinerary updated successfully',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('Error updating story itinerary:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+};
