@@ -2,23 +2,57 @@ import 'newrelic';
 
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
-// Load environment variables from .env.dev
-const envPath = path.resolve(process.cwd(), '.env.dev');
+// Determine which env file to use based on NODE_ENV
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const envFileName = isDevelopment ? '.env.dev' : '.env';
+const envPath = path.resolve(process.cwd(), envFileName);
+
+console.log(`🔍 Looking for environment file: ${envPath}`);
+console.log(`📁 File exists: ${fs.existsSync(envPath)}`);
+
+// Load environment variables
 const result = dotenv.config({ path: envPath });
 
 if (result.error) {
   console.warn(
-    '⚠️  Warning: Could not load .env.dev file:',
+    `⚠️  Warning: Could not load ${envFileName} file:`,
     result.error.message
   );
-  console.warn('Attempting to load from default .env file...');
-  dotenv.config(); // Fallback to .env
+
+  // Try alternative env file
+  const altEnvPath = path.resolve(
+    process.cwd(),
+    isDevelopment ? '.env' : '.env.dev'
+  );
+  console.warn(`🔄 Attempting to load from ${altEnvPath}...`);
+
+  const altResult = dotenv.config({ path: altEnvPath });
+  if (altResult.error) {
+    console.warn('⚠️  Could not load alternative env file either');
+    console.warn(
+      '⚠️  Make sure environment variables are set in your deployment platform'
+    );
+  } else {
+    console.log(
+      `✅ Loaded ${Object.keys(altResult.parsed || {}).length} environment variables from ${altEnvPath}`
+    );
+  }
+} else {
+  console.log(
+    `✅ Loaded ${Object.keys(result.parsed || {}).length} environment variables from ${envPath}`
+  );
 }
 
-console.log(
-  `✅ Loaded ${Object.keys(result.parsed || {}).length} environment variables from ${envPath}`
-);
+// Debug: Show which Razorpay keys are available
+console.log('🔑 Environment Check:', {
+  hasRazorpayKeyId: !!process.env.RAZORPAY_KEY_ID,
+  hasRazorpayKeySecret: !!process.env.RAZORPAY_KEY_SECRET,
+  hasRazorpayWebhook: !!process.env.RAZORPAY_WEBHOOK_SECRET,
+  nodeEnv: process.env.NODE_ENV,
+  port: process.env.PORT,
+});
 
 import express from 'express';
 import cors from 'cors';

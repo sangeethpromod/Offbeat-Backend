@@ -9,8 +9,8 @@ RUN echo $SERVICE_ACCOUNT_JSON > /app/serviceAccountKey.json
 
 COPY . .
 
-# ✅ Remove this line - we'll mount it at runtime instead
-# COPY .env.dev .env.dev
+# Copy environment file
+COPY .env.dev .env.dev
 
 RUN npm run build
 
