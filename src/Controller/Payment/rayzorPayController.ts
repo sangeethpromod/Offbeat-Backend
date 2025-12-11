@@ -7,7 +7,7 @@ import {
   RAZORPAY_KEY_ID_SAFE,
   RAZORPAY_KEY_SECRET_SAFE,
   RAZORPAY_WEBHOOK_SECRET,
-} from '../../Config/rayzorpay';
+} from '../../Config/rayzorpayIntilize';
 import newrelic from 'newrelic';
 
 interface CreateOrderRequest {
