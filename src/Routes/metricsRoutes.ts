@@ -14,3 +14,5 @@ metricRoutes.get('/recent', getRecentStories);
 
 // GET /api/stories/most-booked - Get top 20 most booked stories
 metricRoutes.get('/most-booked', getMostBookedStories);
+
+export { metricRoutes };

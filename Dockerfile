@@ -2,21 +2,16 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-# Copy package manifests first for caching
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
+ARG SERVICE_ACCOUNT_JSON
+RUN echo $SERVICE_ACCOUNT_JSON > /app/serviceAccountKey.json
 
-# Copy full source code AFTER installing dependencies
-# So every code change invalidates cache correctly
 COPY . .
 
-# Inject service account
-ARG SERVICE_ACCOUNT_JSON
-RUN echo "$SERVICE_ACCOUNT_JSON" > /app/serviceAccountKey.json
+# ✅ Remove this line - we'll mount it at runtime instead
+# COPY .env.dev .env.dev
 
-# Build the app
 RUN npm run build
 
 EXPOSE 8080

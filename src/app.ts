@@ -68,6 +68,7 @@ import travellerRoutes from './Routes/travellerRoutes';
 import adminRoutes from './Routes/adminRoutes';
 import wishlistRoutes from './Routes/wishlistRoutes';
 import transactionRoutes from './Routes/transactionroutes';
+import { metricRoutes } from './Routes/metricsRoutes';
 import { swaggerUi, specs } from './Config/swagger';
 import { startCleanupJob } from './Utils/cleanupAbandonedBookings';
 
@@ -95,6 +96,7 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/host', hostRoutes);
 app.use('/api/stories', storyRoutes);
+app.use('/api/stories', metricRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/bookings', bookingRoutes);
