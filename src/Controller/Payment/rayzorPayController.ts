@@ -4,9 +4,9 @@ import Transaction from '../../Model/transactionsModel';
 import Booking from '../../Model/bookingModel';
 import {
   razorpayClient,
-  RZP_KEY_ID,
-  RZP_KEY_SECRET_SAFE,
-  RZP_WEBHOOK_SECRET,
+  RAZORPAY_KEY_ID_SAFE,
+  RAZORPAY_KEY_SECRET_SAFE,
+  RAZORPAY_WEBHOOK_SECRET,
 } from '../../Config/rayzorpay';
 import newrelic from 'newrelic';
 
@@ -125,7 +125,7 @@ export const createRazorpayOrder = async (
       success: true,
       message: 'Order created successfully',
       data: {
-        keyId: RZP_KEY_ID,
+        keyId: RAZORPAY_KEY_ID_SAFE,
         orderId: razorpayOrder.id,
         amount: amountInPaise,
         currency: 'INR',
@@ -187,7 +187,7 @@ export const verifyRazorpayPayment = async (
 
     // Verify signature using HMAC SHA256
     const generatedSignature = crypto
-      .createHmac('sha256', RZP_KEY_SECRET_SAFE)
+      .createHmac('sha256', RAZORPAY_KEY_SECRET_SAFE)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
@@ -216,39 +216,55 @@ export const verifyRazorpayPayment = async (
 
     // Fetch detailed payment information from Razorpay
     try {
-      const paymentDetails = await razorpayClient.payments.fetch(
-        razorpay_payment_id
-      );
+      const paymentDetails =
+        await razorpayClient.payments.fetch(razorpay_payment_id);
 
       // Extract payment method details
       const paymentDetailsData: any = {};
-      if (paymentDetails.method) paymentDetailsData.method = paymentDetails.method;
-      if (paymentDetails.acquirer_data?.rrn) paymentDetailsData.bankRRN = paymentDetails.acquirer_data.rrn;
-      if (paymentDetails.invoice_id) paymentDetailsData.invoiceId = paymentDetails.invoice_id;
-      if ((paymentDetails.acquirer_data as any)?.account_type) paymentDetailsData.payerAccountType = (paymentDetails.acquirer_data as any).account_type;
+      if (paymentDetails.method)
+        paymentDetailsData.method = paymentDetails.method;
+      if (paymentDetails.acquirer_data?.rrn)
+        paymentDetailsData.bankRRN = paymentDetails.acquirer_data.rrn;
+      if (paymentDetails.invoice_id)
+        paymentDetailsData.invoiceId = paymentDetails.invoice_id;
+      if ((paymentDetails.acquirer_data as any)?.account_type)
+        paymentDetailsData.payerAccountType = (
+          paymentDetails.acquirer_data as any
+        ).account_type;
       if (paymentDetails.vpa) paymentDetailsData.vpa = paymentDetails.vpa;
-      if (paymentDetails.card?.network) paymentDetailsData.cardNetwork = paymentDetails.card.network;
-      if (paymentDetails.card?.last4) paymentDetailsData.cardLast4 = paymentDetails.card.last4;
+      if (paymentDetails.card?.network)
+        paymentDetailsData.cardNetwork = paymentDetails.card.network;
+      if (paymentDetails.card?.last4)
+        paymentDetailsData.cardLast4 = paymentDetails.card.last4;
       if (paymentDetails.bank) paymentDetailsData.bank = paymentDetails.bank;
-      if (paymentDetails.wallet) paymentDetailsData.wallet = paymentDetails.wallet;
-      
+      if (paymentDetails.wallet)
+        paymentDetailsData.wallet = paymentDetails.wallet;
+
       if (Object.keys(paymentDetailsData).length > 0) {
         transaction.paymentDetails = paymentDetailsData;
       }
 
       // Extract fee details
       const feeDetailsData: any = {};
-      if (paymentDetails.fee !== undefined) feeDetailsData.totalFee = paymentDetails.fee;
-      if (paymentDetails.fee !== undefined && paymentDetails.tax !== undefined) {
+      if (paymentDetails.fee !== undefined)
+        feeDetailsData.totalFee = paymentDetails.fee;
+      if (
+        paymentDetails.fee !== undefined &&
+        paymentDetails.tax !== undefined
+      ) {
         feeDetailsData.razorpayFee = paymentDetails.fee - paymentDetails.tax;
       }
-      if (paymentDetails.tax !== undefined) feeDetailsData.gst = paymentDetails.tax;
-      
+      if (paymentDetails.tax !== undefined)
+        feeDetailsData.gst = paymentDetails.tax;
+
       if (Object.keys(feeDetailsData).length > 0) {
         transaction.feeDetails = feeDetailsData;
       }
     } catch (fetchError) {
-      console.error('Error fetching payment details from Razorpay:', fetchError);
+      console.error(
+        'Error fetching payment details from Razorpay:',
+        fetchError
+      );
       // Continue even if fetching details fails
     }
 
@@ -313,7 +329,7 @@ export const razorpayWebhookHandler = async (
 
     // Validate webhook signature
     const expectedSignature = crypto
-      .createHmac('sha256', RZP_WEBHOOK_SECRET)
+      .createHmac('sha256', RAZORPAY_WEBHOOK_SECRET)
       .update(webhookBody)
       .digest('hex');
 
@@ -367,33 +383,52 @@ export const razorpayWebhookHandler = async (
 
           // Extract payment method details
           const paymentDetailsData: any = {};
-          if (paymentDetails.method) paymentDetailsData.method = paymentDetails.method;
-          if (paymentDetails.acquirer_data?.rrn) paymentDetailsData.bankRRN = paymentDetails.acquirer_data.rrn;
-          if (paymentDetails.invoice_id) paymentDetailsData.invoiceId = paymentDetails.invoice_id;
-          if ((paymentDetails.acquirer_data as any)?.account_type) paymentDetailsData.payerAccountType = (paymentDetails.acquirer_data as any).account_type;
+          if (paymentDetails.method)
+            paymentDetailsData.method = paymentDetails.method;
+          if (paymentDetails.acquirer_data?.rrn)
+            paymentDetailsData.bankRRN = paymentDetails.acquirer_data.rrn;
+          if (paymentDetails.invoice_id)
+            paymentDetailsData.invoiceId = paymentDetails.invoice_id;
+          if ((paymentDetails.acquirer_data as any)?.account_type)
+            paymentDetailsData.payerAccountType = (
+              paymentDetails.acquirer_data as any
+            ).account_type;
           if (paymentDetails.vpa) paymentDetailsData.vpa = paymentDetails.vpa;
-          if (paymentDetails.card?.network) paymentDetailsData.cardNetwork = paymentDetails.card.network;
-          if (paymentDetails.card?.last4) paymentDetailsData.cardLast4 = paymentDetails.card.last4;
-          if (paymentDetails.bank) paymentDetailsData.bank = paymentDetails.bank;
-          if (paymentDetails.wallet) paymentDetailsData.wallet = paymentDetails.wallet;
-          
+          if (paymentDetails.card?.network)
+            paymentDetailsData.cardNetwork = paymentDetails.card.network;
+          if (paymentDetails.card?.last4)
+            paymentDetailsData.cardLast4 = paymentDetails.card.last4;
+          if (paymentDetails.bank)
+            paymentDetailsData.bank = paymentDetails.bank;
+          if (paymentDetails.wallet)
+            paymentDetailsData.wallet = paymentDetails.wallet;
+
           if (Object.keys(paymentDetailsData).length > 0) {
             transaction.paymentDetails = paymentDetailsData;
           }
 
           // Extract fee details
           const feeDetailsData: any = {};
-          if (paymentDetails.fee !== undefined) feeDetailsData.totalFee = paymentDetails.fee;
-          if (paymentDetails.fee !== undefined && paymentDetails.tax !== undefined) {
-            feeDetailsData.razorpayFee = paymentDetails.fee - paymentDetails.tax;
+          if (paymentDetails.fee !== undefined)
+            feeDetailsData.totalFee = paymentDetails.fee;
+          if (
+            paymentDetails.fee !== undefined &&
+            paymentDetails.tax !== undefined
+          ) {
+            feeDetailsData.razorpayFee =
+              paymentDetails.fee - paymentDetails.tax;
           }
-          if (paymentDetails.tax !== undefined) feeDetailsData.gst = paymentDetails.tax;
-          
+          if (paymentDetails.tax !== undefined)
+            feeDetailsData.gst = paymentDetails.tax;
+
           if (Object.keys(feeDetailsData).length > 0) {
             transaction.feeDetails = feeDetailsData;
           }
         } catch (fetchError) {
-          console.error('Error fetching payment details in webhook:', fetchError);
+          console.error(
+            'Error fetching payment details in webhook:',
+            fetchError
+          );
           // Continue even if fetching details fails
         }
 
@@ -570,7 +605,7 @@ export const getBookingTransactions = async (
     const formatAmount = (amountInPaise?: number) =>
       amountInPaise ? (amountInPaise / 100).toFixed(2) : null;
 
-    const formattedTransactions = transactions.map((transaction) => ({
+    const formattedTransactions = transactions.map(transaction => ({
       transactionId: transaction.transactionId,
       bookingId: transaction.bookingId,
       storyId: transaction.storyId,
